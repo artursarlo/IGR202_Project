@@ -34,18 +34,18 @@ static Camera camera;
 static Mesh mesh;
 
 void printUsage () {
-	std::cerr << std::endl 
+	std::cerr << std::endl
 		 << appTitle << std::endl
          << "Author: Tamy Boubekeur" << std::endl << std::endl
          << "Usage: ./main [<file.off>]" << std::endl
-         << "Commands:" << std::endl 
+         << "Commands:" << std::endl
          << "------------------" << std::endl
          << " ?: Print help" << std::endl
 		 << " w: Toggle wireframe mode" << std::endl
-         << " <drag>+<left button>: rotate model" << std::endl 
+         << " <drag>+<left button>: rotate model" << std::endl
          << " <drag>+<right button>: move model" << std::endl
          << " <drag>+<middle button>: zoom" << std::endl
-         << " q, <esc>: Quit" << std::endl << std::endl; 
+         << " q, <esc>: Quit" << std::endl << std::endl;
 }
 
 void initLighting () {
@@ -96,24 +96,24 @@ void init (const char * modelFilename) {
 	glLineWidth (2.0); // Set the width of edges in GL_LINE polygon mode
     glClearColor (0.0f, 0.0f, 0.0f, 1.0f); // Background color
     glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
-	
+
 	initLighting ();
 	initMaterial ();
 	glDisable (GL_COLOR_MATERIAL);
-	
+
 	mesh.loadOFF (modelFilename);
     camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }
 
 void drawScene () {
     glBegin (GL_TRIANGLES);
-    for (unsigned int i = 0; i < mesh.T.size (); i++) 
+    for (unsigned int i = 0; i < mesh.T.size (); i++)
         for (unsigned int j = 0; j < 3; j++) {
             const Vertex & v = mesh.V[mesh.T[i].v[j]];
-            glNormal3f (v.n[0], v.n[1], v.n[2]); // Specifies current normal vertex   
+            glNormal3f (v.n[0], v.n[1], v.n[2]); // Specifies current normal vertex
             glVertex3f (v.p[0], v.p[1], v.p[2]); // Emit a vertex (one triangle is emitted each time 3 vertices are emitted)
         }
-    glEnd (); 
+    glEnd ();
 }
 
 void reshape(int w, int h) {
@@ -122,10 +122,10 @@ void reshape(int w, int h) {
 
 void display () {
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    camera.apply (); 
+    camera.apply ();
     drawScene ();
     glFlush ();
-    glutSwapBuffers (); 
+    glutSwapBuffers ();
 }
 
 void key (unsigned char keyPressed, int x, int y) {
@@ -137,7 +137,7 @@ void key (unsigned char keyPressed, int x, int y) {
         } else {
             glutFullScreen ();
             fullScreen = true;
-        }      
+        }
         break;
     case 'q':
     case 27:
@@ -177,7 +177,7 @@ void idle () {
         glutSetWindowTitle (winTitle);
         lastTime = currentTime;
     }
-    glutPostRedisplay (); 
+    glutPostRedisplay ();
 }
 
 int main (int argc, char ** argv) {
@@ -196,8 +196,7 @@ int main (int argc, char ** argv) {
     glutKeyboardFunc (key);
     glutMotionFunc (motion);
     glutMouseFunc (mouse);
-    printUsage ();  
+    printUsage ();
     glutMainLoop ();
     return 0;
 }
-

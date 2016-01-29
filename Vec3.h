@@ -1,19 +1,19 @@
 // --------------------------------------------------------------------------
 // Copyright(C) 2009-2015
 // Tamy Boubekeur
-//                                                                            
-// All rights reserved.                                                       
-//                                                                            
-// This program is free software; you can redistribute it and/or modify       
-// it under the terms of the GNU General Public License as published by       
-// the Free Software Foundation; either version 2 of the License, or          
-// (at your option) any later version.                                        
-//                                                                            
-// This program is distributed in the hope that it will be useful,            
-// but WITHOUT ANY WARRANTY; without even the implied warranty of             
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              
-// GNU General Public License (http://www.gnu.org/licenses/gpl.txt)           
-// for more details.                                                          
+//
+// All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+// for more details.
 // --------------------------------------------------------------------------
 
 #pragma once
@@ -28,28 +28,28 @@ class Vec3 {
 public:
   inline Vec3 (void)	{ p[0] = p[1] = p[2] = 0.0; }
 
-  inline Vec3 (T p0, T p1, T p2) { 
+  inline Vec3 (T p0, T p1, T p2) {
 	p[0] = p0;
 	p[1] = p1;
-	p[2] = p2; 
+	p[2] = p2;
   };
 
   inline Vec3 (const Vec3 & v) {
 	init (v[0], v[1], v[2]);
   }
-  
+
   ~Vec3() {}
 
-  inline Vec3 (T* pp) { 
+  inline Vec3 (T* pp) {
 	p[0] = pp[0];
 	p[1] = pp[1];
-	p[2] = pp[2]; 
+	p[2] = pp[2];
   };
 
   // *********
   // Operators
   // *********
-	
+
   inline T& operator[] (int Index) {
 	return (p[Index]);
   };
@@ -112,7 +112,7 @@ public:
 	res[0] = p[0] + P[0];
 	res[1] = p[1] + P[1];
 	res[2] = p[2] + P[2];
-	return (res); 
+	return (res);
   };
 
   inline Vec3 operator- (const Vec3 & P) const {
@@ -120,7 +120,7 @@ public:
 	res[0] = p[0] - P[0];
 	res[1] = p[1] - P[1];
 	res[2] = p[2] - P[2];
-	return (res); 
+	return (res);
   };
 
   inline Vec3 operator- () const {
@@ -128,7 +128,7 @@ public:
 	res[0] = -p[0];
 	res[1] = -p[1];
 	res[2] = -p[2];
-	return (res); 
+	return (res);
   };
 
   inline Vec3 operator* (const Vec3 & P) const {
@@ -136,7 +136,7 @@ public:
 	res[0] = p[0] * P[0];
 	res[1] = p[1] * P[1];
 	res[2] = p[2] * P[2];
-	return (res); 
+	return (res);
   };
 
   inline Vec3 operator* (T s) const {
@@ -144,7 +144,7 @@ public:
 	res[0] = p[0] * s;
 	res[1] = p[1] * s;
 	res[2] = p[2] * s;
-	return (res); 
+	return (res);
   };
 
   inline Vec3 operator/ (const Vec3 & P) const {
@@ -152,7 +152,7 @@ public:
 	res[0] = p[0] / P[0];
 	res[1] = p[1] / P[1];
 	res[2] = p[2] / P[2];
-	return (res); 
+	return (res);
   };
 
   inline Vec3 operator/ (T s) const {
@@ -160,26 +160,26 @@ public:
 	res[0] = p[0] / s;
 	res[1] = p[1] / s;
 	res[2] = p[2] / s;
-	return (res); 
+	return (res);
   };
-	
+
   inline bool operator == (const Vec3 & a) const {
 	return(p[0] == a[0] && p[1] == a[1] && p[2] == a[2]);
   };
-	
+
   inline bool operator != (const Vec3 & a) const {
 	return(p[0] != a[0] || p[1] != a[1] || p[2] != a[2]);
   };
-		
+
   inline bool operator < (const Vec3 & a) const {
 	return(p[0] < a[0] && p[1] < a[1] && p[2] < a[2]);
   };
-		
+
   inline bool operator >= (const Vec3 &a) const {
 	return(p[0] >= a[0] && p[1] >= a[1] && p[2] >= a[2]);
   };
 
-  
+
   /////////////////////////////////////////////////////////////////
 
   inline Vec3 & init (T x, T y, T z) {
@@ -192,7 +192,7 @@ public:
   inline T squaredLength() const {
         return (dot (*this, *this));
   };
-	
+
   inline T length() const {
         return (T)sqrt (squaredLength());
   };
@@ -220,9 +220,9 @@ public:
 		u = Vec3 (-p[1], p[0], 0);
 	  }
 	}
-	else { 
+	else {
 	  if (fabs(p[1]) < fabs(p[2])) {
-				
+
 		// p[1] is minimum
 		u = Vec3 (p[2], 0, -p[0]);
 	  }
@@ -233,12 +233,12 @@ public:
 	}
 	v = cross (*this, u);
   }
-		
-  
+
+
   inline Vec3 projectOn (const Vec3 & N, const Vec3 & P) const {
 	T w = dotProduct (((*this) - P), N);
 	return (*this) - (N * w);
-  } 
+  }
 
 protected:
   T p[3];
@@ -355,7 +355,7 @@ typedef Vec3<float> Vec3f;
 typedef Vec3<double> Vec3d;
 typedef Vec3<int> Vec3i;
 
-    
+
 // Some Emacs-Hints -- please don't remove:
 //
 //  Local Variables:

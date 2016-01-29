@@ -1,19 +1,19 @@
 // --------------------------------------------------------------------------
 // Copyright(C) 2009-2015
 // Tamy Boubekeur
-//                                                                            
-// All rights reserved.                                                       
-//                                                                            
-// This program is free software; you can redistribute it and/or modify       
-// it under the terms of the GNU General Public License as published by       
-// the Free Software Foundation; either version 2 of the License, or          
-// (at your option) any later version.                                        
-//                                                                            
-// This program is distributed in the hope that it will be useful,            
-// but WITHOUT ANY WARRANTY; without even the implied warranty of             
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              
-// GNU General Public License (http://www.gnu.org/licenses/gpl.txt)           
-// for more details.                                                          
+//
+// All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+// for more details.
 // --------------------------------------------------------------------------
 
 #include "Mesh.h"
@@ -25,7 +25,7 @@ using namespace std;
 
 void Mesh::loadOFF (const std::string & filename) {
 	ifstream in (filename.c_str ());
-    if (!in) 
+    if (!in)
         exit (1);
 	string offString;
     unsigned int sizeV, sizeT, tmp;
@@ -73,4 +73,121 @@ void Mesh::centerAndScaleToUnit () {
     }
     for  (unsigned int i = 0; i < V.size (); i++)
         V[i].p = (V[i].p - c) / maxD;
+}
+
+// Return the average edge lenght in the mesh
+// Tere is an error associated with this calculus
+// The bord edges will have a less importante weight in the calculus
+// No problem, since the error is small and a more complicated implementation
+// Will use much more disc space and time
+float  Mesh::0_step (){
+
+  float l_average = 0.0f;
+
+  for (unsigned int i = 0; i < T.size (); i++){
+    l_average += dist (V[T[i].v[0]].p, V[T[i].v[1]].p);
+    l_average += dist (V[T[i].v[0]].p, V[T[i].v[2]].p);
+    l_average += dist (V[T[i].v[1]].p, V[T[i].v[2]].p);
+  }
+
+  return l_average/ (T.size() *3.0f);
+}
+
+// First step of the algorithm
+void Mesh::1step (float l) {
+
+  int T_original_size = T.size();
+  std::vector<int> triangles_2b_erased;
+  std::vector<int> long_edges;
+
+  for (unsigned int i = 0; i < T_original_size; i++){
+    float dist0 = dist (V[T[i].v[0]].p, V[T[i].v[1]].p);
+    float dist1 = dist (V[T[i].v[1]].p, V[T[i].v[2]].p);
+    float dist2 = dist (V[T[i].v[2]].p, V[T[i].v[0]].p);
+
+    if (dist0 > l){
+      long_edges.push_back(0);
+    }
+    if (dist1 > l){
+      long_edges.push_back(1);
+    }
+    if (dist2 > l){
+      long_edges.push_back(2);
+    }
+
+    switch (long_edges.size()){
+    case 1:
+      triangles_2b_erased.pushback(i);
+      T.resize(T.size() +2);
+      V.resize(V.size() +1);
+
+      V[V.size() -1] = Vetex((V[T[long_edges[0]]].p +V[T[(long_edges[0] +1)%3]].p) *0.5f,
+                        (V[T[long_edges[0]]].n +V[T[(long_edges[0] +1)%3]].n) *0.5f
+                             );
+
+      int v0 = V.size() -1;
+      int v1 = T[(long_edges[0] +1)%3];
+      int v2 = T[(long_edges[0] +2)%3];
+      int v3 = T[long_edges[0]];
+
+      T[T.size() -2] = Triangle(v0, v1, v2);
+      T[T.size() -1] = Triangle(v0, v2, v3);
+      break;
+    case 2:
+      triangles_2b_erased.pushback(i);
+      T.resize(T.size() +3);
+      V.resize(V.size() +2);
+
+      V[V.size() -2] = Vetex((V[T[long_edges[0]]].p +V[T[(long_edges[0] +1)%3]].p) *0.5f,
+                             (V[T[long_edges[0]]].n +V[T[(long_edges[0] +1)%3]].n) *0.5f
+                             );
+      V[V.size() -1] = Vetex((V[T[long_edges[1]]].p +V[T[(long_edges[1] +1)%3]].p) *0.5f,
+                             (V[T[long_edges[1]]].n +V[T[(long_edges[1] +1)%3]].n) *0.5f
+                             );
+
+      int v0 = V.size() -2;
+      int v1 = T[(long_edges[0] +1)%3];
+      int v2 = V.size() -1;
+      int v3 = T[(long_edges[0] +2)%3];
+      int v4 = T[long_edges[0]];
+
+      T[T.size() -3] = Triangle(v0, v1, v2);
+      T[T.size() -2] = Triangle(v0, v2, v3);
+      T[T.size() -1] = Triangle(v0, v3, v4);
+      break;
+    case 3:
+      triangles_2b_erased.pushback(i);
+      T.resize(T.size() +4);
+      V.resize(V.size() +3);
+
+      V[V.size() -3] = Vetex((V[T[long_edges[0]]].p +V[T[(long_edges[0] +1)%3]].p) *0.5f,
+                             (V[T[long_edges[0]]].n +V[T[(long_edges[0] +1)%3]].n) *0.5f
+                             );
+      V[V.size() -2] = Vetex((V[T[long_edges[1]]].p +V[T[(long_edges[1] +1)%3]].p) *0.5f,
+                             (V[T[long_edges[1]]].n +V[T[(long_edges[1] +1)%3]].n) *0.5f
+                             );
+      V[V.size() -1] = Vetex((V[T[long_edges[2]]].p +V[T[(long_edges[2] +1)%3]].p) *0.5f,
+                             (V[T[long_edges[2]]].n +V[T[(long_edges[2] +1)%3]].n) *0.5f
+                             );
+
+      int v0 = V.size() -3;
+      int v1 = T[(long_edges[0] +1)%3];
+      int v2 = V.size() -2;
+      int v3 = V.size() -1;
+      int v4 = T[long_edges[0]];
+      int v5 = T[(long_edges[0] +2)%3];
+
+      T[T.size() -4] = Triangle(v0, v1, v2);
+      T[T.size() -3] = Triangle(v0, v2, v3);
+      T[T.size() -2] = Triangle(v0, v3, v4);
+      T[T.size() -1] = Triangle(v2, v5, v3);
+      break;
+    default:
+      break;
+    }
+  }
+
+  for (unsigned int i = 0; i < trinagles_2b_erased.size(); i++){
+    T.erase(T.begin +trinangles_2b_erased[i] -i);
+  }
 }
