@@ -1,4 +1,4 @@
-# Compiled Object files
+*# Compiled Object files
 *.slo
 *.lo
 *.o
@@ -23,6 +23,7 @@
 *.lib
 
 # Executables
+main
 *.exe
 *.out
 *.app
