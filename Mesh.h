@@ -63,16 +63,22 @@ public:
 	std::vector<Vertex> V;
 	std::vector<Triangle> T;
 
-    /// Loads the mesh from a <file>.off
+  inline Mesh& operator= (const Mesh & M) {
+    T = M.T;
+    V = M.V;
+    return (*this);
+  };
+
+  /// Loads the mesh from a <file>.off
 	void loadOFF (const std::string & filename);
 
-    /// Compute smooth per-vertex normals
-    void recomputeNormals ();
+  /// Compute smooth per-vertex normals
+  void recomputeNormals ();
 
-    /// scale to the unit cube and center at original
-    void centerAndScaleToUnit ();
+  /// scale to the unit cube and center at original
+  void centerAndScaleToUnit ();
 
-    float zero_step();
+  float zero_step();
 
-    void first_step(float l);
+  void first_step(float l);
 };
