@@ -80,7 +80,7 @@ void Mesh::centerAndScaleToUnit () {
 // The bord edges will have a less importante weight in the calculus
 // No problem, since the error is small and a more complicated implementation
 // Will use much more disc space and time
-float  Mesh::0_step (){
+float  Mesh::zero_step (){
 
   float l_average = 0.0f;
 
@@ -94,9 +94,9 @@ float  Mesh::0_step (){
 }
 
 // First step of the algorithm
-void Mesh::1step (float l) {
+void Mesh::first_step (float l) {
 
-  int T_original_size = T.size();
+  unsigned int T_original_size = T.size();
   std::vector<int> triangles_2b_erased;
   std::vector<int> long_edges;
 
@@ -104,6 +104,8 @@ void Mesh::1step (float l) {
     float dist0 = dist (V[T[i].v[0]].p, V[T[i].v[1]].p);
     float dist1 = dist (V[T[i].v[1]].p, V[T[i].v[2]].p);
     float dist2 = dist (V[T[i].v[2]].p, V[T[i].v[0]].p);
+
+    // std::cerr << "Dists 0, 1 , 2: " << dist0 << ", " << dist1 << ", " << dist2 << std::endl;
 
     if (dist0 > l){
       long_edges.push_back(0);
@@ -115,67 +117,77 @@ void Mesh::1step (float l) {
       long_edges.push_back(2);
     }
 
+    int v0, v1, v2, v3, v4, v5;
+
     switch (long_edges.size()){
     case 1:
-      triangles_2b_erased.pushback(i);
+      triangles_2b_erased.push_back(i);
       T.resize(T.size() +2);
       V.resize(V.size() +1);
 
-      V[V.size() -1] = Vetex((V[T[long_edges[0]]].p +V[T[(long_edges[0] +1)%3]].p) *0.5f,
-                        (V[T[long_edges[0]]].n +V[T[(long_edges[0] +1)%3]].n) *0.5f
+      V[V.size() -1] = Vertex((V[T[i].v[long_edges[0]]].p +V[T[i].v[(long_edges[0] +1)%3]].p) *0.5f,
+                             (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
                              );
 
-      int v0 = V.size() -1;
-      int v1 = T[(long_edges[0] +1)%3];
-      int v2 = T[(long_edges[0] +2)%3];
-      int v3 = T[long_edges[0]];
+      v0 = V.size() -1;
+      v1 = T[i].v[(long_edges[0] +1)%3];
+      v2 = T[i].v[(long_edges[0] +2)%3];
+      v3 = T[i].v[long_edges[0]];
 
       T[T.size() -2] = Triangle(v0, v1, v2);
       T[T.size() -1] = Triangle(v0, v2, v3);
       break;
     case 2:
-      triangles_2b_erased.pushback(i);
+      triangles_2b_erased.push_back(i);
       T.resize(T.size() +3);
       V.resize(V.size() +2);
 
-      V[V.size() -2] = Vetex((V[T[long_edges[0]]].p +V[T[(long_edges[0] +1)%3]].p) *0.5f,
-                             (V[T[long_edges[0]]].n +V[T[(long_edges[0] +1)%3]].n) *0.5f
+      V[V.size() -2] = Vertex((V[T[i].v[long_edges[0]]].p +V[T[i].v[(long_edges[0] +1)%3]].p) *0.5f,
+                             (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
                              );
-      V[V.size() -1] = Vetex((V[T[long_edges[1]]].p +V[T[(long_edges[1] +1)%3]].p) *0.5f,
-                             (V[T[long_edges[1]]].n +V[T[(long_edges[1] +1)%3]].n) *0.5f
+      V[V.size() -1] = Vertex((V[T[i].v[long_edges[1]]].p +V[T[i].v[(long_edges[1] +1)%3]].p) *0.5f,
+                             (V[T[i].v[long_edges[1]]].n +V[T[i].v[(long_edges[1] +1)%3]].n) *0.5f
                              );
 
-      int v0 = V.size() -2;
-      int v1 = T[(long_edges[0] +1)%3];
-      int v2 = V.size() -1;
-      int v3 = T[(long_edges[0] +2)%3];
-      int v4 = T[long_edges[0]];
-
+      if((long_edges[0] == 0) && (long_edges[1] == 2)){
+        v0 = V.size() -1;
+        v1 = T[i].v[long_edges[0]];
+        v2 = V.size() -2;
+        v3 = T[i].v[(long_edges[0] +1)%3];
+        v4 = T[i].v[(long_edges[0] +2)%3];
+      }
+      else{
+        v0 = V.size() -2;
+        v1 = T[i].v[(long_edges[0] +1)%3];
+        v2 = V.size() -1;
+        v3 = T[i].v[(long_edges[0] +2)%3];
+        v4 = T[i].v[long_edges[0]];
+      }
       T[T.size() -3] = Triangle(v0, v1, v2);
       T[T.size() -2] = Triangle(v0, v2, v3);
       T[T.size() -1] = Triangle(v0, v3, v4);
       break;
     case 3:
-      triangles_2b_erased.pushback(i);
+      triangles_2b_erased.push_back(i);
       T.resize(T.size() +4);
       V.resize(V.size() +3);
 
-      V[V.size() -3] = Vetex((V[T[long_edges[0]]].p +V[T[(long_edges[0] +1)%3]].p) *0.5f,
-                             (V[T[long_edges[0]]].n +V[T[(long_edges[0] +1)%3]].n) *0.5f
+      V[V.size() -3] = Vertex((V[T[i].v[long_edges[0]]].p +V[T[i].v[(long_edges[0] +1)%3]].p) *0.5f,
+                             (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
                              );
-      V[V.size() -2] = Vetex((V[T[long_edges[1]]].p +V[T[(long_edges[1] +1)%3]].p) *0.5f,
-                             (V[T[long_edges[1]]].n +V[T[(long_edges[1] +1)%3]].n) *0.5f
+      V[V.size() -2] = Vertex((V[T[i].v[long_edges[1]]].p +V[T[i].v[(long_edges[1] +1)%3]].p) *0.5f,
+                             (V[T[i].v[long_edges[1]]].n +V[T[i].v[(long_edges[1] +1)%3]].n) *0.5f
                              );
-      V[V.size() -1] = Vetex((V[T[long_edges[2]]].p +V[T[(long_edges[2] +1)%3]].p) *0.5f,
-                             (V[T[long_edges[2]]].n +V[T[(long_edges[2] +1)%3]].n) *0.5f
+      V[V.size() -1] = Vertex((V[T[i].v[long_edges[2]]].p +V[T[i].v[(long_edges[2] +1)%3]].p) *0.5f,
+                             (V[T[i].v[long_edges[2]]].n +V[T[i].v[(long_edges[2] +1)%3]].n) *0.5f
                              );
 
-      int v0 = V.size() -3;
-      int v1 = T[(long_edges[0] +1)%3];
-      int v2 = V.size() -2;
-      int v3 = V.size() -1;
-      int v4 = T[long_edges[0]];
-      int v5 = T[(long_edges[0] +2)%3];
+      v0 = V.size() -3;
+      v1 = T[i].v[(long_edges[0] +1)%3];
+      v2 = V.size() -2;
+      v3 = V.size() -1;
+      v4 = T[i].v[long_edges[0]];
+      v5 = T[i].v[(long_edges[0] +2)%3];
 
       T[T.size() -4] = Triangle(v0, v1, v2);
       T[T.size() -3] = Triangle(v0, v2, v3);
@@ -185,9 +197,11 @@ void Mesh::1step (float l) {
     default:
       break;
     }
+
+    long_edges.resize(0);
   }
 
-  for (unsigned int i = 0; i < trinagles_2b_erased.size(); i++){
-    T.erase(T.begin +trinangles_2b_erased[i] -i);
+  for (unsigned int i = 0; i < triangles_2b_erased.size(); i++){
+    T.erase(T.begin() +triangles_2b_erased[i] -i);
   }
 }

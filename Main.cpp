@@ -19,6 +19,8 @@
 #include "Camera.h"
 #include "Mesh.h"
 
+#define REMESH_FACTOR_L_PERCENTAGE 0.5f
+
 using namespace std;
 
 static const unsigned int DEFAULT_SCREENWIDTH = 1024;
@@ -32,6 +34,8 @@ static bool fullScreen = false;
 
 static Camera camera;
 static Mesh mesh;
+
+static float l_remesh;
 
 void printUsage () {
 	std::cerr << std::endl
@@ -102,7 +106,10 @@ void init (const char * modelFilename) {
 	glDisable (GL_COLOR_MATERIAL);
 
 	mesh.loadOFF (modelFilename);
-    camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
+  l_remesh = mesh.zero_step() * REMESH_FACTOR_L_PERCENTAGE;
+  mesh.first_step(l_remesh);
+  std::cerr << "This is de l_remesh: " << l_remesh << std::endl;
+  camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }
 
 void drawScene () {

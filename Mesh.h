@@ -72,5 +72,7 @@ public:
     /// scale to the unit cube and center at original
     void centerAndScaleToUnit ();
 
-    void 1step();
+    float zero_step();
+
+    void first_step(float l);
 };
