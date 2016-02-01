@@ -52,8 +52,8 @@ void printUsage () {
             << " <drag>+<right button>: move model" << std::endl
             << " <drag>+<middle button>: zoom" << std::endl
             << " q, <esc>: Quit" << std::endl << std::endl;
-}
 
+}
 void initLighting () {
   GLfloat light_position1[4] = {52, 16, 50, 0};
   GLfloat light_position2[4] = {26, 48, 50, 0};
@@ -110,8 +110,8 @@ void init (const char * modelFilename) {
 	mesh.loadOFF (modelFilename);
   original_mesh = mesh;
   remeshed_mesh = mesh;
-  l_remesh = remeshed_mesh.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /3.0f;
-  remeshed_mesh.first_step(l_remesh);
+  l_remesh = remeshed_mesh.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /5.0f;
+  remeshed_mesh.second_step(l_remesh);
   std::cerr << "This is de l_remesh: " << l_remesh << std::endl;
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }

@@ -20,59 +20,65 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <algorithm>
 
 using namespace std;
 
+typedef struct{
+  unsigned int edge_vertexes[2];
+  unsigned int vertex_edge_mid_point;
+} ereaseable_edge;
+
 void Mesh::loadOFF (const std::string & filename) {
 	ifstream in (filename.c_str ());
-    if (!in)
-        exit (1);
+  if (!in)
+    exit (1);
 	string offString;
-    unsigned int sizeV, sizeT, tmp;
-    in >> offString >> sizeV >> sizeT >> tmp;
-    V.resize (sizeV);
-    T.resize (sizeT);
-    for (unsigned int i = 0; i < sizeV; i++)
-        in >> V[i].p;
-    int s;
-    for (unsigned int i = 0; i < sizeT; i++) {
-        in >> s;
-        for (unsigned int j = 0; j < 3; j++)
-            in >> T[i].v[j];
-    }
-    in.close ();
-    centerAndScaleToUnit ();
-    recomputeNormals ();
+  unsigned int sizeV, sizeT, tmp;
+  in >> offString >> sizeV >> sizeT >> tmp;
+  V.resize (sizeV);
+  T.resize (sizeT);
+  for (unsigned int i = 0; i < sizeV; i++)
+    in >> V[i].p;
+  int s;
+  for (unsigned int i = 0; i < sizeT; i++) {
+    in >> s;
+    for (unsigned int j = 0; j < 3; j++)
+      in >> T[i].v[j];
+  }
+  in.close ();
+  centerAndScaleToUnit ();
+  recomputeNormals ();
 }
 
 void Mesh::recomputeNormals () {
-    for (unsigned int i = 0; i < V.size (); i++)
-        V[i].n = Vec3f (0.0, 0.0, 0.0);
-    for (unsigned int i = 0; i < T.size (); i++) {
-        Vec3f e01 = V[T[i].v[1]].p -  V[T[i].v[0]].p;
-        Vec3f e02 = V[T[i].v[2]].p -  V[T[i].v[0]].p;
-        Vec3f n = cross (e01, e02);
-        n.normalize ();
-        for (unsigned int j = 0; j < 3; j++)
-            V[T[i].v[j]].n += n;
-    }
-    for (unsigned int i = 0; i < V.size (); i++)
-        V[i].n.normalize ();
+  for (unsigned int i = 0; i < V.size (); i++)
+    V[i].n = Vec3f (0.0, 0.0, 0.0);
+  for (unsigned int i = 0; i < T.size (); i++) {
+    Vec3f e01 = V[T[i].v[1]].p -  V[T[i].v[0]].p;
+    Vec3f e02 = V[T[i].v[2]].p -  V[T[i].v[0]].p;
+    Vec3f n = cross (e01, e02);
+    n.normalize ();
+    for (unsigned int j = 0; j < 3; j++)
+      V[T[i].v[j]].n += n;
+  }
+  for (unsigned int i = 0; i < V.size (); i++)
+    V[i].n.normalize ();
 }
 
 void Mesh::centerAndScaleToUnit () {
-    Vec3f c;
-    for  (unsigned int i = 0; i < V.size (); i++)
-        c += V[i].p;
-    c /= V.size ();
-    float maxD = dist (V[0].p, c);
-    for (unsigned int i = 0; i < V.size (); i++){
-        float m = dist (V[i].p, c);
-        if (m > maxD)
-            maxD = m;
-    }
-    for  (unsigned int i = 0; i < V.size (); i++)
-        V[i].p = (V[i].p - c) / maxD;
+  Vec3f c;
+  for  (unsigned int i = 0; i < V.size (); i++)
+    c += V[i].p;
+  c /= V.size ();
+  float maxD = dist (V[0].p, c);
+  for (unsigned int i = 0; i < V.size (); i++){
+    float m = dist (V[i].p, c);
+    if (m > maxD)
+      maxD = m;
+  }
+  for  (unsigned int i = 0; i < V.size (); i++)
+    V[i].p = (V[i].p - c) / maxD;
 }
 
 // Return the average edge lenght in the mesh
@@ -105,8 +111,6 @@ void Mesh::first_step (float l) {
     float dist1 = dist (V[T[i].v[1]].p, V[T[i].v[2]].p);
     float dist2 = dist (V[T[i].v[2]].p, V[T[i].v[0]].p);
 
-    // std::cerr << "Dists 0, 1 , 2: " << dist0 << ", " << dist1 << ", " << dist2 << std::endl;
-
     if (dist0 > l){
       long_edges.push_back(0);
     }
@@ -126,8 +130,8 @@ void Mesh::first_step (float l) {
       V.resize(V.size() +1);
 
       V[V.size() -1] = Vertex((V[T[i].v[long_edges[0]]].p +V[T[i].v[(long_edges[0] +1)%3]].p) *0.5f,
-                             (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
-                             );
+                              (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
+                              );
 
       v0 = V.size() -1;
       v1 = T[i].v[(long_edges[0] +1)%3];
@@ -143,11 +147,11 @@ void Mesh::first_step (float l) {
       V.resize(V.size() +2);
 
       V[V.size() -2] = Vertex((V[T[i].v[long_edges[0]]].p +V[T[i].v[(long_edges[0] +1)%3]].p) *0.5f,
-                             (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
-                             );
+                              (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
+                              );
       V[V.size() -1] = Vertex((V[T[i].v[long_edges[1]]].p +V[T[i].v[(long_edges[1] +1)%3]].p) *0.5f,
-                             (V[T[i].v[long_edges[1]]].n +V[T[i].v[(long_edges[1] +1)%3]].n) *0.5f
-                             );
+                              (V[T[i].v[long_edges[1]]].n +V[T[i].v[(long_edges[1] +1)%3]].n) *0.5f
+                              );
 
       if((long_edges[0] == 0) && (long_edges[1] == 2)){
         v0 = V.size() -1;
@@ -173,14 +177,14 @@ void Mesh::first_step (float l) {
       V.resize(V.size() +3);
 
       V[V.size() -3] = Vertex((V[T[i].v[long_edges[0]]].p +V[T[i].v[(long_edges[0] +1)%3]].p) *0.5f,
-                             (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
-                             );
+                              (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
+                              );
       V[V.size() -2] = Vertex((V[T[i].v[long_edges[1]]].p +V[T[i].v[(long_edges[1] +1)%3]].p) *0.5f,
-                             (V[T[i].v[long_edges[1]]].n +V[T[i].v[(long_edges[1] +1)%3]].n) *0.5f
-                             );
+                              (V[T[i].v[long_edges[1]]].n +V[T[i].v[(long_edges[1] +1)%3]].n) *0.5f
+                              );
       V[V.size() -1] = Vertex((V[T[i].v[long_edges[2]]].p +V[T[i].v[(long_edges[2] +1)%3]].p) *0.5f,
-                             (V[T[i].v[long_edges[2]]].n +V[T[i].v[(long_edges[2] +1)%3]].n) *0.5f
-                             );
+                              (V[T[i].v[long_edges[2]]].n +V[T[i].v[(long_edges[2] +1)%3]].n) *0.5f
+                              );
 
       v0 = V.size() -3;
       v1 = T[i].v[(long_edges[0] +1)%3];
@@ -199,6 +203,83 @@ void Mesh::first_step (float l) {
     }
 
     long_edges.resize(0);
+  }
+
+  for (unsigned int i = 0; i < triangles_2b_erased.size(); i++){
+    T.erase(T.begin() +triangles_2b_erased[i] -i);
+  }
+}
+
+// Second step of the algorithm
+void Mesh::second_step (float l) {
+
+  std::vector<int> triangles_2b_erased;
+  std::vector<ereaseable_edge> edges_black_list;
+  ereaseable_edge e;
+
+  for (unsigned int i = 0; i < T.size(); i++){
+    float dist0 = dist (V[T[i].v[0]].p, V[T[i].v[1]].p);
+    float dist1 = dist (V[T[i].v[1]].p, V[T[i].v[2]].p);
+    float dist2 = dist (V[T[i].v[2]].p, V[T[i].v[0]].p);
+
+    if (dist0 < l){
+      e.edge_vertexes[0] = T[i].v[0];
+      e.edge_vertexes[1] = T[i].v[1];
+
+      V.resize(V.size() +1);
+
+      V[V.size() -1] = Vertex((V[T[i].v[0]].p + V[T[i].v[1]].p) *0.5f,
+                              (V[T[i].v[0]].n +V[T[i].v[1]].n) *0.5f
+                              );
+
+      e.vertex_edge_mid_point = V.size() -1;
+      edges_black_list.push_back(e);
+    }
+    else if (dist1 < l){
+      e.edge_vertexes[0] = T[i].v[1];
+      e.edge_vertexes[1] = T[i].v[2];
+
+      V.resize(V.size() +1);
+
+      V[V.size() -1] = Vertex((V[T[i].v[1]].p + V[T[i].v[2]].p) *0.5f,
+                              (V[T[i].v[1]].n +V[T[i].v[2]].n) *0.5f
+                              );
+
+      e.vertex_edge_mid_point = V.size() -1;
+      edges_black_list.push_back(e);
+    }
+    else if (dist2 < l){
+      e.edge_vertexes[0] = T[i].v[0];
+      e.edge_vertexes[1] = T[i].v[2];
+
+      V.resize(V.size() +1);
+
+      V[V.size() -1] = Vertex((V[T[i].v[0]].p + V[T[i].v[2]].p) *0.5f,
+                              (V[T[i].v[0]].n +V[T[i].v[2]].n) *0.5f
+                              );
+
+      e.vertex_edge_mid_point = V.size() -1;
+      edges_black_list.push_back(e);
+    }
+  }
+
+  for (unsigned int i = 0; i < T.size(); i++){
+    for (unsigned int j = 0; j < edges_black_list.size(); j++){
+      unsigned int *va;
+      unsigned int *vb;
+      va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
+      vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
+
+      if ((va != T[i].v +3) && (vb != T[i].v +3)){
+        triangles_2b_erased.push_back(i);
+      }
+      else if (va != T[i].v +3){
+        T[i].v[va -T[i].v] = edges_black_list[j].vertex_edge_mid_point;
+      }
+      else if (vb != T[i].v +3){
+        T[i].v[vb -T[i].v] = edges_black_list[j].vertex_edge_mid_point;
+      }
+    }
   }
 
   for (unsigned int i = 0; i < triangles_2b_erased.size(); i++){
