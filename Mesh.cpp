@@ -45,7 +45,15 @@ void Mesh::loadOFF (const std::string & filename) {
     in >> s;
     for (unsigned int j = 0; j < 3; j++)
       in >> T[i].v[j];
+
+    V[T[i].v[0]].add_neighbor(T[i].v[1]);
+    V[T[i].v[0]].add_neighbor(T[i].v[2]);
+    V[T[i].v[1]].add_neighbor(T[i].v[0]);
+    V[T[i].v[1]].add_neighbor(T[i].v[2]);
+    V[T[i].v[2]].add_neighbor(T[i].v[0]);
+    V[T[i].v[2]].add_neighbor(T[i].v[1]);
   }
+
   in.close ();
   centerAndScaleToUnit ();
   recomputeNormals ();
@@ -79,6 +87,18 @@ void Mesh::centerAndScaleToUnit () {
   }
   for  (unsigned int i = 0; i < V.size (); i++)
     V[i].p = (V[i].p - c) / maxD;
+}
+
+void Mesh::recomputeNeighbors () {
+  for (unsigned int i = 0; i < V.size (); i++)
+    V[i].Neighbor.resize(0);
+  for (unsigned int i = 0; i < T.size (); i++) {
+    V[T[i].v[0]].add_neighbor(T[i].v[1]);
+    V[T[i].v[0]].add_neighbor(T[i].v[2]);
+    V[T[i].v[1]].add_neighbor(T[i].v[0]);
+    V[T[i].v[1]].add_neighbor(T[i].v[2]);
+    V[T[i].v[2]].add_neighbor(T[i].v[0]);
+    V[T[i].v[2]].add_neighbor(T[i].v[1]);
 }
 
 // Return the average edge lenght in the mesh
@@ -254,7 +274,7 @@ void Mesh::second_step (float l) {
       for (unsigned int k = 0; k < triangles_2b_erased.size(); k++){
         va = std::find(T[triangles_2b_erased[k]].v, T[triangles_2b_erased[k]].v +3, e.edge_vertexes[0]);
         vb = std::find(T[triangles_2b_erased[k]].v, T[triangles_2b_erased[k]].v +3, e.edge_vertexes[1]);
-        if ((va != T[triangles_2b_erased[k]].v +3) or (vb != T[triangles_2b_erased[k]].v +3)){
+        if ((va != T[triangles_2b_erased[k]].v +3) || (vb != T[triangles_2b_erased[k]].v +3)){
           edge_2b_killed = true;
         }
       }
@@ -295,11 +315,6 @@ void Mesh::second_step (float l) {
   }
 
 }
-
-
-
-
-
 
 //   for (unsigned int i = 0; i < T.size(); i++){
 //     for (unsigned int j = 0; j < edges_black_list.size(); j++){

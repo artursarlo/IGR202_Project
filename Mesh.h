@@ -19,6 +19,7 @@
 #pragma once
 #include <cmath>
 #include <vector>
+#include <algorithm>
 #include "Vec3.h"
 
 /// A simple vertex class storing position and normal
@@ -29,6 +30,14 @@ class Vertex {
   inline virtual ~Vertex () {}
   Vec3f p;
   Vec3f n;
+
+  std::vector<unsigned int> Neighbor;
+
+  inline void add_neighbor(unsigned int v) {
+    if (std::find(Neighbor.begin(), Neighbor.end(), v) == Neighbor.end()) {
+      Neighbor.push_back(v);
+    }
+  }
 };
 
 /// A Triangle class expressed as a triplet of indices (over an external vertex list)
@@ -77,6 +86,8 @@ class Mesh {
 
   /// scale to the unit cube and center at original
   void centerAndScaleToUnit ();
+
+  void recomputeNeighbors ();
 
   float zero_step();
 
