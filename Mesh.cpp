@@ -20,6 +20,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <vector>
 #include <algorithm>
 
 using namespace std;
@@ -99,6 +100,7 @@ void Mesh::recomputeNeighbors () {
     V[T[i].v[1]].add_neighbor(T[i].v[2]);
     V[T[i].v[2]].add_neighbor(T[i].v[0]);
     V[T[i].v[2]].add_neighbor(T[i].v[1]);
+  }
 }
 
 // Return the average edge lenght in the mesh
@@ -234,10 +236,16 @@ void Mesh::first_step (float l) {
 void Mesh::second_step (float l) {
 
   std::vector<int> triangles_2b_erased;
-  bool apply_edge_collapse, edge_2b_killed;
+
+  std::vector<ereaseable_edge> edges_2b_erased;
   ereaseable_edge e;
+
+  bool apply_edge_collapse, edge_2b_killed;
+  std::vector<unsigned int>::iterator ia, ib, ic, id;
   unsigned int *va;
   unsigned int *vb;
+  unsigned int *vc;
+  unsigned int *vd;
 
   for (unsigned int i = 0; i < T.size(); i++){
     // std::cerr << "Analyzing triangle "  << i << " of :" << T.size() << std::endl;
@@ -269,17 +277,49 @@ void Mesh::second_step (float l) {
 
     if(apply_edge_collapse){
 
-      edge_2b_killed = false;
+      edge_2b_killed = true;
 
-      for (unsigned int k = 0; k < triangles_2b_erased.size(); k++){
-        va = std::find(T[triangles_2b_erased[k]].v, T[triangles_2b_erased[k]].v +3, e.edge_vertexes[0]);
-        vb = std::find(T[triangles_2b_erased[k]].v, T[triangles_2b_erased[k]].v +3, e.edge_vertexes[1]);
-        if ((va != T[triangles_2b_erased[k]].v +3) || (vb != T[triangles_2b_erased[k]].v +3)){
-          edge_2b_killed = true;
+      for (unsigned int k = 0; k < edges_2b_erased.size(); k++){
+        ia = std::find(V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.begin(),
+                       V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.end(),
+                       e.edge_vertexes[0]
+                       );
+        ib = std::find(V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.begin(),
+                       V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.end(),
+                       e.edge_vertexes[1]
+                       );
+        ic = std::find(V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.begin(),
+                       V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.end(),
+                       e.edge_vertexes[0]
+                       );
+        id = std::find(V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.begin(),
+                       V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.end(),
+                       e.edge_vertexes[1]
+                       );
+        va = std::find(std::begin(edges_2b_erased[k].edge_vertexes), std::end(edges_2b_erased[k].edge_vertexes), e.edge_vertexes[0]);
+        vb = std::find(std::begin(edges_2b_erased[k].edge_vertexes), std::end(edges_2b_erased[k].edge_vertexes), e.edge_vertexes[1]);
+
+        if ((ia != V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.end()) ||
+            (ib != V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.end()) ||
+            (ic != V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.end()) ||
+            (id != V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.end())){
+          edge_2b_killed = false;
+        }
+
+
+        if (va != std::end(edges_2b_erased[k].edge_vertexes))
+          std::cerr << "Left Argument: "  << (va != std::end(edges_2b_erased[k].edge_vertexes)) << std::endl;
+        if (vb != std::end(edges_2b_erased[k].edge_vertexes))
+          std::cerr << "Right Argument: "  << (va != std::end(edges_2b_erased[k].edge_vertexes)) << std::endl;
+        if ((va != std::end(edges_2b_erased[k].edge_vertexes)) ||
+            (vb != std::end(edges_2b_erased[k].edge_vertexes))){
+          std::cerr << "Result Argument: "  << ((va != std::end(edges_2b_erased[k].edge_vertexes)) ||
+                                                (vb != std::end(edges_2b_erased[k].edge_vertexes))) << std::endl;
+          edge_2b_killed = false;
         }
       }
 
-      if(!edge_2b_killed){
+      if(edge_2b_killed){
 
 
         V.resize(V.size() +1);
@@ -290,21 +330,25 @@ void Mesh::second_step (float l) {
 
         e.vertex_edge_mid_point = V.size() -1;
 
+        edges_2b_erased.push_back(e);
 
-        for (unsigned int j = 0; j < T.size(); j++){
-          va = std::find(T[j].v, T[j].v +3, e.edge_vertexes[0]);
-          vb = std::find(T[j].v, T[j].v +3, e.edge_vertexes[1]);
-          if ((va != T[j].v +3) && (vb != T[j].v +3)){
-            triangles_2b_erased.push_back(j);
-            // std::cerr << "Triangles 2b erased size: " << triangles_2b_erased.size() << std::endl;
-          }
-          else if (va != T[j].v +3){
-            T[j].v[va -T[j].v] = e.vertex_edge_mid_point;
-          }
-          else if (vb != T[j].v +3){
-            T[j].v[vb -T[j].v] = e.vertex_edge_mid_point;
-          }
-        }
+      }
+    }
+  }
+
+  for (unsigned int j = 0; j < T.size(); j++){
+    for (unsigned int k = 0; k < edges_2b_erased.size(); k++){
+      va = std::find(std::begin(T[j].v), std::end(T[j].v), edges_2b_erased[k].edge_vertexes[0]);
+      vb = std::find(std::begin(T[j].v), std::end(T[j].v), edges_2b_erased[k].edge_vertexes[1]);
+      if ((va != std::end(T[j].v)) && (vb != std::end(T[j].v))){
+        triangles_2b_erased.push_back(j);
+        // std::cerr << "Triangles 2b erased size: " << triangles_2b_erased.size() << std::endl;
+      }
+      if (va != std::end(T[j].v)){
+        T[j].v[va -std::begin(T[j].v)] = edges_2b_erased[k].vertex_edge_mid_point;
+      }
+      if (vb != std::end(T[j].v)){
+        T[j].v[vb -std::begin(T[j].v)] = edges_2b_erased[k].vertex_edge_mid_point;
       }
     }
   }
@@ -313,7 +357,6 @@ void Mesh::second_step (float l) {
   for (unsigned int i = 0; i < triangles_2b_erased.size(); i++){
     T.erase(T.begin() +triangles_2b_erased[i] -i);
   }
-
 }
 
 //   for (unsigned int i = 0; i < T.size(); i++){
