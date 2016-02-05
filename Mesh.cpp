@@ -214,138 +214,111 @@ void Mesh::first_step (float l) {
 void Mesh::second_step (float l) {
 
   std::vector<int> triangles_2b_erased;
-  std::vector<ereaseable_edge> edges_black_list;
+  bool apply_edge_collapse, edge_2b_killed;
   ereaseable_edge e;
-
   unsigned int *va;
   unsigned int *vb;
-  bool black_edge_already_marked;
-  bool black_edge_touching_other;
 
   for (unsigned int i = 0; i < T.size(); i++){
+    // std::cerr << "Analyzing triangle "  << i << " of :" << T.size() << std::endl;
+
     float dist0 = dist (V[T[i].v[0]].p, V[T[i].v[1]].p);
     float dist1 = dist (V[T[i].v[1]].p, V[T[i].v[2]].p);
     float dist2 = dist (V[T[i].v[2]].p, V[T[i].v[0]].p);
+
+    apply_edge_collapse = false;
 
     if (dist0 < l){
       e.edge_vertexes[0] = T[i].v[0];
       e.edge_vertexes[1] = T[i].v[1];
 
-      black_edge_already_marked = false;
-      black_edge_touching_other = false;
-
-      for (unsigned int j = 0; j < edges_black_list.size(); j++){
-        va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
-        vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
-
-        if ((va != T[i].v +3) && (vb != T[i].v +3)){
-          black_edge_already_marked = true;
-        }
-        else if((va != T[i].v +3) || (vb != T[i].v +3)){
-          black_edge_touching_other = true;
-          e.vertex_edge_mid_point = edges_black_list[j].vertex_edge_mid_point;
-        }
-      }
-
-      if(!black_edge_already_marked){
-        if(!black_edge_touching_other){
-          V.resize(V.size() +1);
-
-          V[V.size() -1] = Vertex((V[T[i].v[0]].p + V[T[i].v[1]].p) *0.5f,
-                                  (V[T[i].v[0]].n +V[T[i].v[1]].n) *0.5f
-                                  );
-
-          e.vertex_edge_mid_point = V.size() -1;
-        }
-      }
-      edges_black_list.push_back(e);
+      apply_edge_collapse = true;
     }
     else if (dist1 < l){
       e.edge_vertexes[0] = T[i].v[1];
       e.edge_vertexes[1] = T[i].v[2];
 
-      black_edge_already_marked = false;
-      black_edge_touching_other = false;
-
-      for (unsigned int j = 0; j < edges_black_list.size(); j++){
-        va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
-        vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
-
-        if ((va != T[i].v +3) && (vb != T[i].v +3)){
-          black_edge_already_marked = true;
-        }
-        else if((va != T[i].v +3) || (vb != T[i].v +3)){
-          black_edge_touching_other = true;
-          e.vertex_edge_mid_point = edges_black_list[j].vertex_edge_mid_point;
-        }
-      }
-
-      if(!black_edge_already_marked){
-        if(!black_edge_touching_other){
-          V.resize(V.size() +1);
-
-          V[V.size() -1] = Vertex((V[T[i].v[1]].p + V[T[i].v[2]].p) *0.5f,
-                                  (V[T[i].v[1]].n +V[T[i].v[2]].n) *0.5f
-                                  );
-
-          e.vertex_edge_mid_point = V.size() -1;
-        }
-      }
-      edges_black_list.push_back(e);
+      apply_edge_collapse = true;
     }
     else if (dist2 < l){
       e.edge_vertexes[0] = T[i].v[0];
       e.edge_vertexes[1] = T[i].v[2];
 
-      black_edge_already_marked = false;
-      black_edge_touching_other = false;
+      apply_edge_collapse = true;
+    }
 
-      for (unsigned int j = 0; j < edges_black_list.size(); j++){
-        va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
-        vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
+    if(apply_edge_collapse){
 
-        if ((va != T[i].v +3) && (vb != T[i].v +3)){
-          black_edge_already_marked = true;
-        }
-        else if((va != T[i].v +3) || (vb != T[i].v +3)){
-          black_edge_touching_other = true;
-          e.vertex_edge_mid_point = edges_black_list[j].vertex_edge_mid_point;
-        }
-      }
+      edge_2b_killed = false;
 
-      if(!black_edge_already_marked){
-        if(!black_edge_touching_other){
-          V.resize(V.size() +1);
-
-          V[V.size() -1] = Vertex((V[T[i].v[0]].p + V[T[i].v[2]].p) *0.5f,
-                                  (V[T[i].v[0]].n +V[T[i].v[2]].n) *0.5f
-                                  );
-
-          e.vertex_edge_mid_point = V.size() -1;
+      for (unsigned int k = 0; k < triangles_2b_erased.size(); k++){
+        va = std::find(T[triangles_2b_erased[k]].v, T[triangles_2b_erased[k]].v +3, e.edge_vertexes[0]);
+        vb = std::find(T[triangles_2b_erased[k]].v, T[triangles_2b_erased[k]].v +3, e.edge_vertexes[1]);
+        if ((va != T[triangles_2b_erased[k]].v +3) or (vb != T[triangles_2b_erased[k]].v +3)){
+          edge_2b_killed = true;
         }
       }
-      edges_black_list.push_back(e);
+
+      if(!edge_2b_killed){
+
+
+        V.resize(V.size() +1);
+
+        V[V.size() -1] = Vertex((V[e.edge_vertexes[0]].p + V[e.edge_vertexes[1]].p) *0.5f,
+                                (V[e.edge_vertexes[0]].n +V[e.edge_vertexes[1]].n) *0.5f
+                                );
+
+        e.vertex_edge_mid_point = V.size() -1;
+
+
+        for (unsigned int j = 0; j < T.size(); j++){
+          va = std::find(T[j].v, T[j].v +3, e.edge_vertexes[0]);
+          vb = std::find(T[j].v, T[j].v +3, e.edge_vertexes[1]);
+          if ((va != T[j].v +3) && (vb != T[j].v +3)){
+            triangles_2b_erased.push_back(j);
+            // std::cerr << "Triangles 2b erased size: " << triangles_2b_erased.size() << std::endl;
+          }
+          else if (va != T[j].v +3){
+            T[j].v[va -T[j].v] = e.vertex_edge_mid_point;
+          }
+          else if (vb != T[j].v +3){
+            T[j].v[vb -T[j].v] = e.vertex_edge_mid_point;
+          }
+        }
+      }
     }
   }
 
-  for (unsigned int i = 0; i < T.size(); i++){
-    for (unsigned int j = 0; j < edges_black_list.size(); j++){
-      va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
-      vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
-
-      if ((va != T[i].v +3) && (vb != T[i].v +3)){
-        triangles_2b_erased.push_back(i);
-      }
-      else if (va != T[i].v +3){
-        T[i].v[va -T[i].v] = edges_black_list[j].vertex_edge_mid_point;
-      }
-      else if (vb != T[i].v +3){
-        T[i].v[vb -T[i].v] = edges_black_list[j].vertex_edge_mid_point;
-      }
-    }
-  }
-
+  std::sort (triangles_2b_erased.begin(), triangles_2b_erased.end());
   for (unsigned int i = 0; i < triangles_2b_erased.size(); i++){
     T.erase(T.begin() +triangles_2b_erased[i] -i);
   }
+
 }
+
+
+
+
+
+
+//   for (unsigned int i = 0; i < T.size(); i++){
+//     for (unsigned int j = 0; j < edges_black_list.size(); j++){
+//       va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
+//       vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
+
+//       if ((va != T[i].v +3) && (vb != T[i].v +3)){
+//         triangles_2b_erased.push_back(i);
+//       }
+//       else if (va != T[i].v +3){
+//         T[i].v[va -T[i].v] = edges_black_list[j].vertex_edge_mid_point;
+//       }
+//       else if (vb != T[i].v +3){
+//         T[i].v[vb -T[i].v] = edges_black_list[j].vertex_edge_mid_point;
+//       }
+//     }
+//   }
+
+//   for (unsigned int i = 0; i < triangles_2b_erased.size(); i++){
+//     T.erase(T.begin() +triangles_2b_erased[i] -i);
+//   }
+// }

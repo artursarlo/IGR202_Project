@@ -19,7 +19,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 
-#define REMESH_FACTOR_L_PERCENTAGE 0.9f
+#define REMESH_FACTOR_L_PERCENTAGE 0.90f
 
 using namespace std;
 
@@ -33,10 +33,10 @@ static unsigned int FPS = 0;
 static bool fullScreen = false;
 
 static Camera camera;
-static Mesh mesh, original_mesh, remeshed_mesh;
+static Mesh mesh, original_mesh, remeshed_mesh_first, remeshed_mesh_second;
 
-static float l_remesh;
-static bool remesh_active = false;
+static float l_remesh_split, l_remesh_collapse;
+static int remesh_counter = 0;
 
 void printUsage () {
 	std::cerr << std::endl
@@ -47,7 +47,8 @@ void printUsage () {
             << "------------------" << std::endl
             << " ?: Print help" << std::endl
             << " w: Toggle wireframe mode" << std::endl
-            << " r: Toggle remeshed mode" << std::endl
+            << " +: Increment remeshed mode" << std::endl
+            << " -: Decrement remeshed mode" << std::endl
             << " <drag>+<left button>: rotate model" << std::endl
             << " <drag>+<right button>: move model" << std::endl
             << " <drag>+<middle button>: zoom" << std::endl
@@ -109,10 +110,13 @@ void init (const char * modelFilename) {
 
 	mesh.loadOFF (modelFilename);
   original_mesh = mesh;
-  remeshed_mesh = mesh;
-  l_remesh = remeshed_mesh.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /5.0f;
-  remeshed_mesh.second_step(l_remesh);
-  std::cerr << "This is de l_remesh: " << l_remesh << std::endl;
+  remeshed_mesh_first = mesh;
+  l_remesh_split = remeshed_mesh_first.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /3.0f;
+  l_remesh_collapse = remeshed_mesh_first.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /5.0f;
+
+  remeshed_mesh_first.first_step(l_remesh_split);
+  remeshed_mesh_second = remeshed_mesh_first;
+  remeshed_mesh_second.second_step(l_remesh_collapse);
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }
 
@@ -150,13 +154,29 @@ void key (unsigned char keyPressed, int x, int y) {
       fullScreen = true;
     }
     break;
-  case 'r':
-    if (remesh_active) {
+  case '+':
+    remesh_counter = (remesh_counter +1)%3;
+    if (remesh_counter == 0) {
       mesh = original_mesh;
-      remesh_active = false;
-    } else {
-      mesh = remeshed_mesh;
-      remesh_active = true;
+    }
+    else if (remesh_counter == 1){
+      mesh = remeshed_mesh_first;
+    }
+    else{
+      mesh = remeshed_mesh_second;
+    }
+    break;
+  case '-':
+    if(remesh_counter >0)
+      remesh_counter = remesh_counter -1;
+    if (remesh_counter == 0) {
+      mesh = original_mesh;
+    }
+    else if (remesh_counter == 1){
+      mesh = remeshed_mesh_first;
+    }
+    else{
+      mesh = remeshed_mesh_second;
     }
     break;
   case 'q':
