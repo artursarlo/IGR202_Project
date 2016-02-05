@@ -114,16 +114,22 @@ void Mesh::calculate_Voronoi_areas() {
 
 void Mesh::do_tangential_smoothing() {
   for (unsigned int i = 0; i < V.size(); i++) {
-    float sum_area = 0;
-    Vec3f pos = 0;
-    for (unsigned int j = 0; j < V[i].Neighbor.size(); i++) {
-      pos += V[V[i].Neighbor[j]].area * V[V[i].Neighbor[j]].p;
-      sum_area += V[V[i].Neighbor[j]].area;
+    float sum_area = 0.0f;
+    Vec3f pos = Vec3f(0.0f);
+
+    //std::cerr << V[i].Neighbor[1000];
+    for (unsigned int j = 0; j < V[i].Neighbor.size(); j++) {
+      float area_j = V[V[i].Neighbor[j]].area;
+      //Vec3f t(area_j, area_j, area_j);
+      pos += area_j * V[V[i].Neighbor[j]].p;
+      sum_area += area_j;
     }
+    //std::cerr << sum_area << std::endl;
+    // Vec3f s(sum_area, sum_area, sum_area);
     V[i].g = pos / sum_area;
   }
   for (unsigned int i = 0; i < V.size(); i++) {
-    V[i].p = V[i].g;
+    V[i].p += (V[i].g - V[i].p) * 0.8;
   }
 }
 

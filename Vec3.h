@@ -34,6 +34,12 @@ public:
 	p[2] = p2;
   };
 
+  inline Vec3 (T p0) {
+	p[0] = p0;
+	p[1] = p0;
+	p[2] = p0;
+  };
+
   inline Vec3 (const Vec3 & v) {
 	init (v[0], v[1], v[2]);
   }
