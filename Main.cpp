@@ -1,7 +1,7 @@
 // ----------------------------------------------
-// Informatique Graphique 3D & Réalité Virtuelle.
+// Informatique Graphique 3D & Rï¿½alitï¿½ Virtuelle.
 // Travaux Pratiques
-// Traitement Géométrique
+// Traitement Gï¿½omï¿½trique
 // Copyright (C) 2015 Tamy Boubekeur
 // All rights reserved.
 // ----------------------------------------------
@@ -27,7 +27,7 @@ static const unsigned int DEFAULT_SCREENWIDTH = 1024;
 static const unsigned int DEFAULT_SCREENHEIGHT = 768;
 static const string DEFAULT_MESH_FILE ("MeshCollection/max_50k.off");
 
-static string appTitle ("Informatique Graphique & Realite Virtuelle - Travaux Pratiques - Traitement Géométrique");
+static string appTitle ("Informatique Graphique & Realite Virtuelle - Travaux Pratiques - Traitement Gï¿½omï¿½trique");
 static GLint window;
 static unsigned int FPS = 0;
 static bool fullScreen = false;
@@ -112,7 +112,21 @@ void init (const char * modelFilename) {
   remeshed_mesh = mesh;
   l_remesh = remeshed_mesh.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /5.0f;
   remeshed_mesh.second_step(l_remesh);
-  std::cerr << "This is de l_remesh: " << l_remesh << std::endl;
+  //std::cerr << "This is de l_remesh: " << l_remesh << std::endl;
+
+	for (unsigned int k = 0; k < 20; k++) {
+		mesh.calculate_Voronoi_areas();
+		mesh.do_tangential_smoothing();
+	}
+	//float sum = 0;
+	// for (unsigned int i = 0; i < mesh.V.size(); i++) {
+	// 	sum += mesh.V[i].area;
+	// }
+	//std::cerr << mesh.V[1].Neighbor.size() << std::endl;
+	// for (int i = 0; i < mesh.V[0].Neighbor.size(); i++) {
+	// 	std::cerr << mesh.V[0].Neighbor[i] << std::endl;
+	// }
+	//std::cerr << "Total area is: " << mesh.V[1].area << std::endl;
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }
 

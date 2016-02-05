@@ -45,6 +45,14 @@ void Mesh::loadOFF (const std::string & filename) {
     in >> s;
     for (unsigned int j = 0; j < 3; j++)
       in >> T[i].v[j];
+    //std::cerr << T[i].v[0] << " " << T[i].v[1] << " " << T[i].v[2] << std::endl;
+    V[T[i].v[0]].add_neighbor(T[i].v[1]);
+    V[T[i].v[0]].add_neighbor(T[i].v[2]);
+    V[T[i].v[1]].add_neighbor(T[i].v[0]);
+    V[T[i].v[1]].add_neighbor(T[i].v[2]);
+    V[T[i].v[2]].add_neighbor(T[i].v[0]);
+    V[T[i].v[2]].add_neighbor(T[i].v[1]);
+    //std::cerr << V[T[i].v[0]].Neighbor[0];
   }
   in.close ();
   centerAndScaleToUnit ();
@@ -79,6 +87,44 @@ void Mesh::centerAndScaleToUnit () {
   }
   for  (unsigned int i = 0; i < V.size (); i++)
     V[i].p = (V[i].p - c) / maxD;
+}
+
+void Mesh::calculate_Voronoi_areas() {
+  std::vector<unsigned int> centroids;
+
+  for (unsigned int i = 0; i < V.size(); i++) {
+    centroids.resize(V[i].Neighbor.size());
+    float sum = 0;
+    for (unsigned int j = 0; j < centroids.size(); j++) {
+      Vec3f m1 = (V[i].p + V[V[i].Neighbor[j]].p) / 2.0;
+      Vec3f m2 = (V[i].p + V[V[i].Neighbor[(j + 1) % centroids.size()]].p) / 2.0;
+      float a = dist(V[i].p, m1);
+      float b = dist(V[i].p, m2);
+      float c = dist(m1, m2);
+      float s = (a + b + c) / 2.0;
+      sum += sqrt(s * (s - a) * (s - b) * (s - c));
+
+      // centroids[i] = (V[i].p + V[V[i].Neighbor[j]].p +
+      //                 V[V[i].Neighbor[(j + 1) % centroids.size()]].p) / 3.0;
+    }
+    V[i].area = sum;
+  }
+
+}
+
+void Mesh::do_tangential_smoothing() {
+  for (unsigned int i = 0; i < V.size(); i++) {
+    float sum_area = 0;
+    Vec3f pos = 0;
+    for (unsigned int j = 0; j < V[i].Neighbor.size(); i++) {
+      pos += V[V[i].Neighbor[j]].area * V[V[i].Neighbor[j]].p;
+      sum_area += V[V[i].Neighbor[j]].area;
+    }
+    V[i].g = pos / sum_area;
+  }
+  for (unsigned int i = 0; i < V.size(); i++) {
+    V[i].p = V[i].g;
+  }
 }
 
 // Return the average edge lenght in the mesh
