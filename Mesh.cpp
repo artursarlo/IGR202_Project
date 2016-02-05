@@ -217,6 +217,11 @@ void Mesh::second_step (float l) {
   std::vector<ereaseable_edge> edges_black_list;
   ereaseable_edge e;
 
+  unsigned int *va;
+  unsigned int *vb;
+  bool black_edge_already_marked;
+  bool black_edge_touching_other;
+
   for (unsigned int i = 0; i < T.size(); i++){
     float dist0 = dist (V[T[i].v[0]].p, V[T[i].v[1]].p);
     float dist1 = dist (V[T[i].v[1]].p, V[T[i].v[2]].p);
@@ -226,47 +231,105 @@ void Mesh::second_step (float l) {
       e.edge_vertexes[0] = T[i].v[0];
       e.edge_vertexes[1] = T[i].v[1];
 
-      V.resize(V.size() +1);
+      black_edge_already_marked = false;
+      black_edge_touching_other = false;
 
-      V[V.size() -1] = Vertex((V[T[i].v[0]].p + V[T[i].v[1]].p) *0.5f,
-                              (V[T[i].v[0]].n +V[T[i].v[1]].n) *0.5f
-                              );
+      for (unsigned int j = 0; j < edges_black_list.size(); j++){
+        va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
+        vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
 
-      e.vertex_edge_mid_point = V.size() -1;
+        if ((va != T[i].v +3) && (vb != T[i].v +3)){
+          black_edge_already_marked = true;
+        }
+        else if((va != T[i].v +3) || (vb != T[i].v +3)){
+          black_edge_touching_other = true;
+          e.vertex_edge_mid_point = edges_black_list[j].vertex_edge_mid_point;
+        }
+      }
+
+      if(!black_edge_already_marked){
+        if(!black_edge_touching_other){
+          V.resize(V.size() +1);
+
+          V[V.size() -1] = Vertex((V[T[i].v[0]].p + V[T[i].v[1]].p) *0.5f,
+                                  (V[T[i].v[0]].n +V[T[i].v[1]].n) *0.5f
+                                  );
+
+          e.vertex_edge_mid_point = V.size() -1;
+        }
+      }
       edges_black_list.push_back(e);
     }
     else if (dist1 < l){
       e.edge_vertexes[0] = T[i].v[1];
       e.edge_vertexes[1] = T[i].v[2];
 
-      V.resize(V.size() +1);
+      black_edge_already_marked = false;
+      black_edge_touching_other = false;
 
-      V[V.size() -1] = Vertex((V[T[i].v[1]].p + V[T[i].v[2]].p) *0.5f,
-                              (V[T[i].v[1]].n +V[T[i].v[2]].n) *0.5f
-                              );
+      for (unsigned int j = 0; j < edges_black_list.size(); j++){
+        va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
+        vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
 
-      e.vertex_edge_mid_point = V.size() -1;
+        if ((va != T[i].v +3) && (vb != T[i].v +3)){
+          black_edge_already_marked = true;
+        }
+        else if((va != T[i].v +3) || (vb != T[i].v +3)){
+          black_edge_touching_other = true;
+          e.vertex_edge_mid_point = edges_black_list[j].vertex_edge_mid_point;
+        }
+      }
+
+      if(!black_edge_already_marked){
+        if(!black_edge_touching_other){
+          V.resize(V.size() +1);
+
+          V[V.size() -1] = Vertex((V[T[i].v[1]].p + V[T[i].v[2]].p) *0.5f,
+                                  (V[T[i].v[1]].n +V[T[i].v[2]].n) *0.5f
+                                  );
+
+          e.vertex_edge_mid_point = V.size() -1;
+        }
+      }
       edges_black_list.push_back(e);
     }
     else if (dist2 < l){
       e.edge_vertexes[0] = T[i].v[0];
       e.edge_vertexes[1] = T[i].v[2];
 
-      V.resize(V.size() +1);
+      black_edge_already_marked = false;
+      black_edge_touching_other = false;
 
-      V[V.size() -1] = Vertex((V[T[i].v[0]].p + V[T[i].v[2]].p) *0.5f,
-                              (V[T[i].v[0]].n +V[T[i].v[2]].n) *0.5f
-                              );
+      for (unsigned int j = 0; j < edges_black_list.size(); j++){
+        va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
+        vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
 
-      e.vertex_edge_mid_point = V.size() -1;
+        if ((va != T[i].v +3) && (vb != T[i].v +3)){
+          black_edge_already_marked = true;
+        }
+        else if((va != T[i].v +3) || (vb != T[i].v +3)){
+          black_edge_touching_other = true;
+          e.vertex_edge_mid_point = edges_black_list[j].vertex_edge_mid_point;
+        }
+      }
+
+      if(!black_edge_already_marked){
+        if(!black_edge_touching_other){
+          V.resize(V.size() +1);
+
+          V[V.size() -1] = Vertex((V[T[i].v[0]].p + V[T[i].v[2]].p) *0.5f,
+                                  (V[T[i].v[0]].n +V[T[i].v[2]].n) *0.5f
+                                  );
+
+          e.vertex_edge_mid_point = V.size() -1;
+        }
+      }
       edges_black_list.push_back(e);
     }
   }
 
   for (unsigned int i = 0; i < T.size(); i++){
     for (unsigned int j = 0; j < edges_black_list.size(); j++){
-      unsigned int *va;
-      unsigned int *vb;
       va = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[0]);
       vb = std::find(T[i].v, T[i].v +3, edges_black_list[j].edge_vertexes[1]);
 
