@@ -27,7 +27,7 @@ using namespace std;
 
 typedef struct{
   unsigned int edge_vertexes[2];
-  unsigned int vertex_edge_mid_point;
+  unsigned int edge_mid_point;
 } ereaseable_edge;
 
 void Mesh::loadOFF (const std::string & filename) {
@@ -53,11 +53,26 @@ void Mesh::loadOFF (const std::string & filename) {
     V[T[i].v[1]].add_neighbor(T[i].v[2]);
     V[T[i].v[2]].add_neighbor(T[i].v[0]);
     V[T[i].v[2]].add_neighbor(T[i].v[1]);
+
+    // va = add_vertex(Vertex((V[T[i].v[0]].p +V[T[i].v[1]].p) *0.5f,
+  //                           (V[T[i].v[0]].n +V[T[i].v[1]].n) *0.5f
+  //                            ));
+  //   vb = add_vertex(Vertex((V[T[i].v[1]].p +V[T[i].v[2]].p) *0.5f,
+  //                           (V[T[i].v[1]].n +V[T[i].v[2]].n) *0.5f
+  //                            ));
+  //   vc = add_vertex(Vertex((V[T[i].v[2]].p +V[T[i].v[2]].p) *0.5f,
+  //                           (V[T[i].v[0]].n +V[T[i].v[0]].n) *0.5f
+  //                            ));
+
+  //   T[i].e[0] = Edge (T[i].v[0], T[i].v[1], va);
+  //   T[i].e[1] = Edge (T[i].v[0], T[i].v[1], vb);
+  //   T[i].e[2] = Edge (T[i].v[0], T[i].v[1], vc);
   }
 
   in.close ();
   centerAndScaleToUnit ();
   recomputeNormals ();
+  recomputeEdges ();
 }
 
 void Mesh::recomputeNormals () {
@@ -103,6 +118,34 @@ void Mesh::recomputeNeighbors () {
   }
 }
 
+ void Mesh::recomputeEdges () {
+   std::vector<Edge> computed_edges;
+   std::vector<Edge>::iterator It;
+
+   for (unsigned int i = 0; i < T.size (); i++) {
+     if(!T[i].edges_calculated){
+       T[i].e[0] = Edge (T[i].v[0], T[i].v[1]);
+       T[i].e[1] = Edge (T[i].v[1], T[i].v[2]);
+       T[i].e[2] = Edge (T[i].v[2], T[i].v[0]);
+
+       for (unsigned int k =0; k<3; k++){
+         It = std::find(computed_edges.begin(), computed_edges.end(), T[i].e[k]);
+         if (It == computed_edges.end()) {
+           V.push_back(Vertex((V[T[i].v[k]].p +V[T[i].v[(k+1)%3]].p) *0.5f,
+                              (V[T[i].v[k]].n +V[T[i].v[(k+1)%3]].n) *0.5f
+                              ));
+           T[i].e[k].edge_mid_point =  V.size() -1;
+           computed_edges.push_back(T[i].e[k]);
+         }
+         else{
+           T[i].e[k].edge_mid_point = computed_edges[It -computed_edges.begin()].edge_mid_point;
+         }
+       }
+       T[i].edges_calculated = true;
+     }
+   }
+ }
+
 // Return the average edge lenght in the mesh
 // Tere is an error associated with this calculus
 // The bord edges will have a less importante weight in the calculus
@@ -143,19 +186,15 @@ void Mesh::first_step (float l) {
       long_edges.push_back(2);
     }
 
+    unsigned int va, vb, vc;
     int v0, v1, v2, v3, v4, v5;
 
     switch (long_edges.size()){
     case 1:
       triangles_2b_erased.push_back(i);
       T.resize(T.size() +2);
-      V.resize(V.size() +1);
 
-      V[V.size() -1] = Vertex((V[T[i].v[long_edges[0]]].p +V[T[i].v[(long_edges[0] +1)%3]].p) *0.5f,
-                              (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
-                              );
-
-      v0 = V.size() -1;
+      v0 = T[i].e[long_edges[0]].edge_mid_point;
       v1 = T[i].v[(long_edges[0] +1)%3];
       v2 = T[i].v[(long_edges[0] +2)%3];
       v3 = T[i].v[long_edges[0]];
@@ -166,26 +205,18 @@ void Mesh::first_step (float l) {
     case 2:
       triangles_2b_erased.push_back(i);
       T.resize(T.size() +3);
-      V.resize(V.size() +2);
-
-      V[V.size() -2] = Vertex((V[T[i].v[long_edges[0]]].p +V[T[i].v[(long_edges[0] +1)%3]].p) *0.5f,
-                              (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
-                              );
-      V[V.size() -1] = Vertex((V[T[i].v[long_edges[1]]].p +V[T[i].v[(long_edges[1] +1)%3]].p) *0.5f,
-                              (V[T[i].v[long_edges[1]]].n +V[T[i].v[(long_edges[1] +1)%3]].n) *0.5f
-                              );
 
       if((long_edges[0] == 0) && (long_edges[1] == 2)){
-        v0 = V.size() -1;
+        v0 = T[i].e[long_edges[1]].edge_mid_point;
         v1 = T[i].v[long_edges[0]];
-        v2 = V.size() -2;
+        v2 = T[i].e[long_edges[0]].edge_mid_point;
         v3 = T[i].v[(long_edges[0] +1)%3];
         v4 = T[i].v[(long_edges[0] +2)%3];
       }
       else{
-        v0 = V.size() -2;
+        v0 = T[i].e[long_edges[0]].edge_mid_point;;
         v1 = T[i].v[(long_edges[0] +1)%3];
-        v2 = V.size() -1;
+        v2 = T[i].e[long_edges[1]].edge_mid_point;
         v3 = T[i].v[(long_edges[0] +2)%3];
         v4 = T[i].v[long_edges[0]];
       }
@@ -194,24 +225,14 @@ void Mesh::first_step (float l) {
       T[T.size() -1] = Triangle(v0, v3, v4);
       break;
     case 3:
+      std::cerr << "Ereasing 3 trinagles!!" << std::endl;
       triangles_2b_erased.push_back(i);
       T.resize(T.size() +4);
-      V.resize(V.size() +3);
 
-      V[V.size() -3] = Vertex((V[T[i].v[long_edges[0]]].p +V[T[i].v[(long_edges[0] +1)%3]].p) *0.5f,
-                              (V[T[i].v[long_edges[0]]].n +V[T[i].v[(long_edges[0] +1)%3]].n) *0.5f
-                              );
-      V[V.size() -2] = Vertex((V[T[i].v[long_edges[1]]].p +V[T[i].v[(long_edges[1] +1)%3]].p) *0.5f,
-                              (V[T[i].v[long_edges[1]]].n +V[T[i].v[(long_edges[1] +1)%3]].n) *0.5f
-                              );
-      V[V.size() -1] = Vertex((V[T[i].v[long_edges[2]]].p +V[T[i].v[(long_edges[2] +1)%3]].p) *0.5f,
-                              (V[T[i].v[long_edges[2]]].n +V[T[i].v[(long_edges[2] +1)%3]].n) *0.5f
-                              );
-
-      v0 = V.size() -3;
+      v0 = T[i].e[long_edges[0]].edge_mid_point;
       v1 = T[i].v[(long_edges[0] +1)%3];
-      v2 = V.size() -2;
-      v3 = V.size() -1;
+      v2 = T[i].e[long_edges[1]].edge_mid_point;
+      v3 = T[i].e[long_edges[2]].edge_mid_point;
       v4 = T[i].v[long_edges[0]];
       v5 = T[i].v[(long_edges[0] +2)%3];
 
@@ -320,7 +341,7 @@ void Mesh::second_step (float l) {
                                 (V[e.edge_vertexes[0]].n +V[e.edge_vertexes[1]].n) *0.5f
                                 );
 
-        e.vertex_edge_mid_point = V.size() -1;
+        e.edge_mid_point = V.size() -1;
 
         edges_2b_erased.push_back(e);
 
@@ -337,12 +358,12 @@ void Mesh::second_step (float l) {
         // std::cerr << "Triangles 2b erased size: " << triangles_2b_erased.size() << std::endl;
       }
       if (va != std::end(T[j].v)){
-        // T[j].v[va -std::begin(T[j].v)] = edges_2b_erased[k].vertex_edge_mid_point;
-        *va = edges_2b_erased[k].vertex_edge_mid_point;
+        // T[j].v[va -std::begin(T[j].v)] = edges_2b_erased[k].edge_mid_point;
+        *va = edges_2b_erased[k].edge_mid_point;
       }
       if (vb != std::end(T[j].v)){
-        // T[j].v[vb -std::begin(T[j].v)] = edges_2b_erased[k].vertex_edge_mid_point;
-        *vb = edges_2b_erased[k].vertex_edge_mid_point;
+        // T[j].v[vb -std::begin(T[j].v)] = edges_2b_erased[k].edge_mid_point;
+        *vb = edges_2b_erased[k].edge_mid_point;
       }
     }
   }
@@ -366,10 +387,10 @@ void Mesh::second_step (float l) {
 //         triangles_2b_erased.push_back(i);
 //       }
 //       else if (va != T[i].v +3){
-//         T[i].v[va -T[i].v] = edges_black_list[j].vertex_edge_mid_point;
+//         T[i].v[va -T[i].v] = edges_black_list[j].edge_mid_point;
 //       }
 //       else if (vb != T[i].v +3){
-//         T[i].v[vb -T[i].v] = edges_black_list[j].vertex_edge_mid_point;
+//         T[i].v[vb -T[i].v] = edges_black_list[j].edge_mid_point;
 //       }
 //     }
 //   }

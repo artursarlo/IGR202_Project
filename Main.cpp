@@ -116,10 +116,12 @@ void init (const char * modelFilename) {
   l_remesh_collapse = remeshed_mesh_first.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /5.0f;
 
   remeshed_mesh_first.first_step(l_remesh_split);
+  remeshed_mesh_first.recomputeNormals();
 
   remeshed_mesh_second = remeshed_mesh_first;
   remeshed_mesh_second.recomputeNeighbors();
   remeshed_mesh_second.second_step(l_remesh_collapse);
+  remeshed_mesh_second.recomputeNormals();
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }
 
