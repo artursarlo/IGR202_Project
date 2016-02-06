@@ -19,8 +19,6 @@
 #include "Camera.h"
 #include "Mesh.h"
 
-#define REMESH_FACTOR_L_PERCENTAGE 0.90f
-
 using namespace std;
 
 static const unsigned int DEFAULT_SCREENWIDTH = 1024;
@@ -35,7 +33,7 @@ static bool fullScreen = false;
 static Camera camera;
 static Mesh mesh, original_mesh, remeshed_mesh_first, remeshed_mesh_second;
 
-static float l_remesh_split, l_remesh_collapse;
+static float l_average;
 static int remesh_counter = 0;
 
 void printUsage () {
@@ -112,15 +110,15 @@ void init (const char * modelFilename) {
 
   original_mesh = mesh;
   remeshed_mesh_first = mesh;
-  l_remesh_split = remeshed_mesh_first.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /3.0f;
-  l_remesh_collapse = remeshed_mesh_first.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /5.0f;
 
-  remeshed_mesh_first.first_step(l_remesh_split);
+  l_average = remeshed_mesh_first.zero_step();
+
+  remeshed_mesh_first.first_step(l_average);
   remeshed_mesh_first.recomputeNormals();
 
   remeshed_mesh_second = remeshed_mesh_first;
   remeshed_mesh_second.recomputeNeighbors();
-  remeshed_mesh_second.second_step(l_remesh_collapse);
+  remeshed_mesh_second.second_step(l_average);
   remeshed_mesh_second.recomputeNormals();
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }
