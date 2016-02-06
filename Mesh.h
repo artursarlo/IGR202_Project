@@ -91,6 +91,10 @@ class Mesh {
 
   void calculate_Voronoi_areas();
 
+  bool is_obtuse_triangle(Vec3f p1, Vec3f p2, Vec3f p3);
+
+  float area_triangle(Vec3f p1, Vec3f p2, Vec3f p3);
+
   void do_tangential_smoothing();
 
   float zero_step();

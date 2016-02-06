@@ -114,19 +114,15 @@ void init (const char * modelFilename) {
   remeshed_mesh.second_step(l_remesh);
   //std::cerr << "This is de l_remesh: " << l_remesh << std::endl;
 
+	srand(time(NULL));
+
+	// Run a number of cycle
 	for (unsigned int k = 0; k < 20; k++) {
 		mesh.calculate_Voronoi_areas();
+		// The 4th step in the algorithm, but using area-based tangential smoothing
 		mesh.do_tangential_smoothing();
 	}
-	//float sum = 0;
-	// for (unsigned int i = 0; i < mesh.V.size(); i++) {
-	// 	sum += mesh.V[i].area;
-	// }
-	//std::cerr << mesh.V[1].Neighbor.size() << std::endl;
-	// for (int i = 0; i < mesh.V[0].Neighbor.size(); i++) {
-	// 	std::cerr << mesh.V[0].Neighbor[i] << std::endl;
-	// }
-	//std::cerr << "Total area is: " << mesh.V[1].area << std::endl;
+
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }
 

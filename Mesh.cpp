@@ -89,47 +89,90 @@ void Mesh::centerAndScaleToUnit () {
     V[i].p = (V[i].p - c) / maxD;
 }
 
+// compute the Voronoi area of each vertex
 void Mesh::calculate_Voronoi_areas() {
-  std::vector<unsigned int> centroids;
 
   for (unsigned int i = 0; i < V.size(); i++) {
-    centroids.resize(V[i].Neighbor.size());
-    float sum = 0;
-    for (unsigned int j = 0; j < centroids.size(); j++) {
-      Vec3f m1 = (V[i].p + V[V[i].Neighbor[j]].p) / 2.0;
-      Vec3f m2 = (V[i].p + V[V[i].Neighbor[(j + 1) % centroids.size()]].p) / 2.0;
-      float a = dist(V[i].p, m1);
-      float b = dist(V[i].p, m2);
-      float c = dist(m1, m2);
-      float s = (a + b + c) / 2.0;
-      sum += sqrt(s * (s - a) * (s - b) * (s - c));
+    float sum = 0.0f;
+    for (unsigned int j = 0; j < V[i].Neighbor.size(); j++) {
+      // two midpoints
+      Vec3f m1 = (V[i].p + V[V[i].Neighbor[j]].p) / 2.0f;
+      Vec3f m2 = (V[i].p + V[V[i].Neighbor[(j + 1) % V[i].Neighbor.size()]].p) / 2.0f;
 
-      // centroids[i] = (V[i].p + V[V[i].Neighbor[j]].p +
-      //                 V[V[i].Neighbor[(j + 1) % centroids.size()]].p) / 3.0;
+      // if the triangle is obtuse, just just the midpoints edge to calculate the area
+      if (is_obtuse_triangle(V[i].p, V[V[i].Neighbor[j]].p,
+        V[V[i].Neighbor[(j + 1) % V[i].Neighbor.size()]].p)) {
+          sum += area_triangle(V[i].p, m1, m2);
+      }
+      // otherwise find the intersection inside the triangel, then compute two partial areas
+      else {
+        Vec3f n1 = V[i].p - m1;
+        Vec3f n2 = V[i].p - m2;
+        Vec3f n3 = cross(n1, n2);
+        float det = dot(n1, cross(n2, n3));
+        Vec3f intersection = (dot(m1, n1) * cross(n2, n3) + dot(m2, n2) * cross(n3, n1) +
+                              dot(V[i].p, n3) * cross(n1, n2)) / det;
+        sum += area_triangle(V[i].p, m1, intersection);
+        sum += area_triangle(V[i].p, m2, intersection);
+      }
     }
+    // The Voronoi area is the sum of all partial areas
     V[i].area = sum;
   }
-
 }
 
+// check if the triangle formed by p1, p2, p3 is obtuse
+bool Mesh::is_obtuse_triangle(Vec3f p1, Vec3f p2, Vec3f p3) {
+  if (dot(p1 - p2, p1 - p3) <= 0)
+    return 1;
+  if (dot(p2 - p1, p2 - p3) <= 0)
+    return 1;
+  if (dot(p3 - p1, p3 - p2) <= 0)
+    return 1;
+  return 0;
+}
+
+// calculate the area of triangle formed by p1, p2, p3
+float Mesh::area_triangle(Vec3f p1, Vec3f p2, Vec3f p3) {
+  float a = dist(p1, p2);
+  float b = dist(p2, p3);
+  float c = dist(p1, p3);
+  float s = (a + b + c) / 2.0f;
+  return sqrt(s * (s - a) * (s - b) * (s - c));
+}
+
+// Relocate vertices on the surface by area-based tangential smoothing
 void Mesh::do_tangential_smoothing() {
+  // calculate the gravity-weighted centroid of each vertex
   for (unsigned int i = 0; i < V.size(); i++) {
     float sum_area = 0.0f;
     Vec3f pos = Vec3f(0.0f);
 
-    //std::cerr << V[i].Neighbor[1000];
     for (unsigned int j = 0; j < V[i].Neighbor.size(); j++) {
       float area_j = V[V[i].Neighbor[j]].area;
-      //Vec3f t(area_j, area_j, area_j);
       pos += area_j * V[V[i].Neighbor[j]].p;
       sum_area += area_j;
     }
-    //std::cerr << sum_area << std::endl;
-    // Vec3f s(sum_area, sum_area, sum_area);
+
     V[i].g = pos / sum_area;
   }
+
+  // damping factor
+  float lambda = (double) rand() / (RAND_MAX);
+
+  // project each vertex back into the tangent plane
   for (unsigned int i = 0; i < V.size(); i++) {
-    V[i].p += (V[i].g - V[i].p) * 0.8;
+    Vec3f d = V[i].g - V[i].p;
+    float n1 = V[i].n[0];
+    float n2 = V[i].n[1];
+    float n3 = V[i].n[2];
+
+    // 3 column vectors of matrix (I - n_i x n_i')
+    Vec3f v1 = Vec3f(1 - n1 * n1, -n1 * n2, -n1 * n3);
+    Vec3f v2 = Vec3f(-n1 * n2, 1 - n2 * n2, -n2 * n3);
+    Vec3f v3 = Vec3f(-n1 * n3, -n2 * n3, 1 - n3 * n3);
+
+    V[i].p += lambda * (d[0] * v1 + d[1] * v2 + d[2] * v3);
   }
 }
 
