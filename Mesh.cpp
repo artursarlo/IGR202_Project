@@ -276,7 +276,6 @@ void Mesh::second_step (float l) {
     }
 
     if(apply_edge_collapse){
-
       edge_2b_killed = true;
 
       for (unsigned int k = 0; k < edges_2b_erased.size(); k++){
@@ -306,15 +305,8 @@ void Mesh::second_step (float l) {
           edge_2b_killed = false;
         }
 
-
-        if (va != std::end(edges_2b_erased[k].edge_vertexes))
-          std::cerr << "Left Argument: "  << (va != std::end(edges_2b_erased[k].edge_vertexes)) << std::endl;
-        if (vb != std::end(edges_2b_erased[k].edge_vertexes))
-          std::cerr << "Right Argument: "  << (va != std::end(edges_2b_erased[k].edge_vertexes)) << std::endl;
         if ((va != std::end(edges_2b_erased[k].edge_vertexes)) ||
             (vb != std::end(edges_2b_erased[k].edge_vertexes))){
-          std::cerr << "Result Argument: "  << ((va != std::end(edges_2b_erased[k].edge_vertexes)) ||
-                                                (vb != std::end(edges_2b_erased[k].edge_vertexes))) << std::endl;
           edge_2b_killed = false;
         }
       }
@@ -345,12 +337,18 @@ void Mesh::second_step (float l) {
         // std::cerr << "Triangles 2b erased size: " << triangles_2b_erased.size() << std::endl;
       }
       if (va != std::end(T[j].v)){
-        T[j].v[va -std::begin(T[j].v)] = edges_2b_erased[k].vertex_edge_mid_point;
+        // T[j].v[va -std::begin(T[j].v)] = edges_2b_erased[k].vertex_edge_mid_point;
+        *va = edges_2b_erased[k].vertex_edge_mid_point;
       }
       if (vb != std::end(T[j].v)){
-        T[j].v[vb -std::begin(T[j].v)] = edges_2b_erased[k].vertex_edge_mid_point;
+        // T[j].v[vb -std::begin(T[j].v)] = edges_2b_erased[k].vertex_edge_mid_point;
+        *vb = edges_2b_erased[k].vertex_edge_mid_point;
       }
     }
+  }
+
+  for (unsigned int k = 0; k < edges_2b_erased.size(); k++){
+    std::cerr << "Erased Edge:  "  << edges_2b_erased[k].edge_vertexes[0] << "," << edges_2b_erased[k].edge_vertexes[1] << std::endl;
   }
 
   std::sort (triangles_2b_erased.begin(), triangles_2b_erased.end());

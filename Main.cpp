@@ -109,14 +109,16 @@ void init (const char * modelFilename) {
 	glDisable (GL_COLOR_MATERIAL);
 
 	mesh.loadOFF (modelFilename);
+
   original_mesh = mesh;
   remeshed_mesh_first = mesh;
   l_remesh_split = remeshed_mesh_first.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /3.0f;
   l_remesh_collapse = remeshed_mesh_first.zero_step() * REMESH_FACTOR_L_PERCENTAGE *4.0f /5.0f;
 
   remeshed_mesh_first.first_step(l_remesh_split);
-  remeshed_mesh_first.recomputeNeighbors();
+
   remeshed_mesh_second = remeshed_mesh_first;
+  remeshed_mesh_second.recomputeNeighbors();
   remeshed_mesh_second.second_step(l_remesh_collapse);
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }
