@@ -1,3 +1,9 @@
+ifneq ($(REMESH_VERBOSE),)
+    CONFIG_OPT += -DREMESH_VERBOSE=1
+else
+    CONFIG_OPT += -DREMESH_VERBOSE=0
+endif
+
 CIBLE = main
 SRCS =  Main.cpp Camera.cpp Mesh.cpp
 LIBS =  -lglut -lGLU -lGL -lm 
@@ -5,7 +11,7 @@ LIBS =  -lglut -lGLU -lGL -lm
 CC = g++
 CPP = g++
 
-FLAGS = -std=c++11 -Wall -O2 
+FLAGS = -std=c++11 -Wall -O2 $(CONFIG_OPT)
 
 CFLAGS = $(FLAGS)
 CXXFLAGS = $(FLAGS)
@@ -20,6 +26,3 @@ clean:
 Camera.o: Camera.cpp Camera.h Vec3.h
 Mesh.o: Mesh.cpp Mesh.h Vec3.h
 Main.o: Main.cpp Vec3.h Camera.h Mesh.h
-
-
-

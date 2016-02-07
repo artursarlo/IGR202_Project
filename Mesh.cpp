@@ -23,6 +23,12 @@
 #include <vector>
 #include <algorithm>
 
+#if REMESH_VERBOSE
+#include <ctime>
+static std::clock_t begin_time, end_time;
+static double elapsed_secs;
+#endif
+
 #define REMESH_FACTOR_L_PERCENTAGE 0.9f
 
 using namespace std;
@@ -33,6 +39,12 @@ typedef struct{
 } ereaseable_edge;
 
 void Mesh::loadOFF (const std::string & filename) {
+  
+  #if REMESH_VERBOSE
+	std::cerr << "loadOFF Begin..." << std::endl;
+  begin_time = clock();
+  #endif
+
 	ifstream in (filename.c_str ());
   if (!in)
     exit (1);
@@ -61,6 +73,13 @@ void Mesh::loadOFF (const std::string & filename) {
   centerAndScaleToUnit ();
   recomputeNormals ();
   recomputeEdges ();
+
+  #if REMESH_VERBOSE
+  end_time = clock();
+  elapsed_secs = double(end_time - begin_time) /CLOCKS_PER_SEC;
+  std::cerr << "loadOFF End... Elapsed time (seconds): "
+  << elapsed_secs << std::endl;
+  #endif
 }
 
 void Mesh::recomputeNormals () {
@@ -143,6 +162,11 @@ void Mesh::recomputeEdges () {
  */
 float Mesh::zero_step (){
 
+  #if REMESH_VERBOSE
+  std::cerr << "zero_step Begin..." << std::endl;
+  begin_time = clock();
+  #endif
+
   Edge e[3];
   std::vector<Edge> mesh_edges;
   std::vector<Edge>::iterator It;
@@ -165,6 +189,13 @@ float Mesh::zero_step (){
       }
   }
 
+  #if REMESH_VERBOSE
+  end_time = clock();
+  elapsed_secs = double(end_time - begin_time) /CLOCKS_PER_SEC;
+  std::cerr << "zero_step End... Elapsed time (seconds): "
+            << elapsed_secs << std::endl;
+  #endif
+
   return l_average /edge_count;
 }
 
@@ -175,6 +206,11 @@ float Mesh::zero_step (){
  * @param l Average edge length 
  */
 void Mesh::first_step (float l) {
+
+  #if REMESH_VERBOSE
+  std::cerr << "fisrt_step Begin..." << std::endl;
+  begin_time = clock();
+  #endif
 
   float l_roof = l *REMESH_FACTOR_L_PERCENTAGE *4.0f /3.0f;
   unsigned int T_original_size = T.size();
@@ -259,6 +295,13 @@ void Mesh::first_step (float l) {
   for (unsigned int i = 0; i < triangles_2b_erased.size(); i++){
     T.erase(T.begin() +triangles_2b_erased[i] -i);
   }
+
+  #if REMESH_VERBOSE
+  end_time = clock();
+  elapsed_secs = double(end_time - begin_time) /CLOCKS_PER_SEC;
+  std::cerr << "first_step End... Elapsed time (seconds): "
+            << elapsed_secs << std::endl;
+  #endif
 }
 
 /**
@@ -268,6 +311,11 @@ void Mesh::first_step (float l) {
  * @param l Average edge length 
  */
 void Mesh::second_step (float l) {
+
+  #if REMESH_VERBOSE
+  std::cerr << "second_step Begin..." << std::endl;
+  begin_time = clock();
+  #endif
 
   float l_floor = l *REMESH_FACTOR_L_PERCENTAGE *4.0f /5.0f;
 
@@ -381,4 +429,11 @@ void Mesh::second_step (float l) {
   for (unsigned int i = 0; i < triangles_2b_erased.size(); i++){
     T.erase(T.begin() +triangles_2b_erased[i] -i);
   }
+
+  #if REMESH_VERBOSE
+  end_time = clock();
+  elapsed_secs = double(end_time - begin_time) /CLOCKS_PER_SEC;
+  std::cerr << "second_step End... Elapsed time (seconds): "
+            << elapsed_secs << std::endl;
+  #endif
 }
