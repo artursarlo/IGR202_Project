@@ -25,8 +25,6 @@
 
 #if REMESH_VERBOSE
 #include <ctime>
-static std::clock_t begin_time, end_time;
-static double elapsed_secs;
 #endif
 
 #define REMESH_FACTOR_L_PERCENTAGE 0.9f
@@ -40,7 +38,9 @@ typedef struct{
 
 void Mesh::loadOFF (const std::string & filename) {
   
-  #if REMESH_VERBOSE
+#if REMESH_VERBOSE
+  std::clock_t begin_time, end_time;
+  double elapsed_secs;
 	std::cerr << "loadOFF Begin..." << std::endl;
   begin_time = clock();
   #endif
@@ -126,32 +126,60 @@ void Mesh::recomputeNeighbors () {
 }
 
 void Mesh::recomputeEdges () {
-  std::vector<Edge> computed_edges;
+
+  #if REMESH_VERBOSE
+  std::clock_t begin_time, end_time;
+  double elapsed_secs;
+
+  std::cerr << "recomputeEdges Begin..." << std::endl;
+  begin_time = clock();
+  #endif
+
   std::vector<Edge>::iterator It;
+  Edge new_edges[3];
+
+  E.resize(0);
+  for (unsigned int i = 0; i < V.size (); i++) {
+    V[i].edges.resize(0);
+  }
 
   for (unsigned int i = 0; i < T.size (); i++) {
-    if(!T[i].edges_calculated){
-      T[i].e[0] = Edge (T[i].v[0], T[i].v[1]);
-      T[i].e[1] = Edge (T[i].v[1], T[i].v[2]);
-      T[i].e[2] = Edge (T[i].v[2], T[i].v[0]);
+    new_edges[0] = Edge (T[i].v[0], T[i].v[1]);
+    new_edges[1] = Edge (T[i].v[1], T[i].v[2]);
+    new_edges[2] = Edge (T[i].v[2], T[i].v[0]);
 
-      for (unsigned int k =0; k<3; k++){
-        It = std::find(computed_edges.begin(), computed_edges.end(), T[i].e[k]);
-        if (It == computed_edges.end()) {
-          V.push_back(Vertex((V[T[i].v[k]].p +V[T[i].v[(k+1)%3]].p) *0.5f,
-                             (V[T[i].v[k]].n +V[T[i].v[(k+1)%3]].n) *0.5f
-                             ));
-          T[i].e[k].edge_mid_point =  V.size() -1;
-          computed_edges.push_back(T[i].e[k]);
-        }
-        else{
-          T[i].e[k].edge_mid_point =
-            computed_edges[It -computed_edges.begin()].edge_mid_point;
-        }
+    for (unsigned int k =0; k<3; k++){
+      It = std::find(E.begin(), E.end(), new_edges[k]);
+      if (It == E.end()) {
+        V.push_back(Vertex((V[T[i].v[k]].p +V[T[i].v[(k+1)%3]].p) *0.5f,
+                           (V[T[i].v[k]].n +V[T[i].v[(k+1)%3]].n) *0.5f
+                           ));
+        new_edges[k].edge_mid_point =  V.size() -1;
+
+        E.push_back(new_edges[k]);
+        T[i].e[k] = E.size() -1;
       }
-      T[i].edges_calculated = true;
+      else{
+        T[i].e[k] = It -E.begin();
+      }
     }
+
+    V[T[i].v[0]].add_edge(T[i].e[0]);
+    V[T[i].v[0]].add_edge(T[i].e[2]);
+    V[T[i].v[1]].add_edge(T[i].e[0]);
+    V[T[i].v[1]].add_edge(T[i].e[1]);
+    V[T[i].v[2]].add_edge(T[i].e[1]);
+    V[T[i].v[2]].add_edge(T[i].e[2]);
+
   }
+
+  #if REMESH_VERBOSE
+  end_time = clock();
+  elapsed_secs = double(end_time - begin_time) /CLOCKS_PER_SEC;
+  std::cerr << "recomputeEdges End... Elapsed time (seconds): "
+            << elapsed_secs << std::endl;
+  #endif
+
 }
 
 
@@ -163,6 +191,9 @@ void Mesh::recomputeEdges () {
 float Mesh::zero_step (){
 
   #if REMESH_VERBOSE
+  std::clock_t begin_time, end_time;
+  double elapsed_secs;
+
   std::cerr << "zero_step Begin..." << std::endl;
   begin_time = clock();
   #endif
@@ -208,6 +239,9 @@ float Mesh::zero_step (){
 void Mesh::first_step (float l) {
 
   #if REMESH_VERBOSE
+  std::clock_t begin_time, end_time;
+  double elapsed_secs;
+
   std::cerr << "fisrt_step Begin..." << std::endl;
   begin_time = clock();
   #endif
@@ -239,7 +273,7 @@ void Mesh::first_step (float l) {
       triangles_2b_erased.push_back(i);
       T.resize(T.size() +2);
 
-      v0 = T[i].e[long_edges[0]].edge_mid_point;
+      v0 = E[T[i].e[long_edges[0]]].edge_mid_point;
       v1 = T[i].v[(long_edges[0] +1)%3];
       v2 = T[i].v[(long_edges[0] +2)%3];
       v3 = T[i].v[long_edges[0]];
@@ -252,16 +286,16 @@ void Mesh::first_step (float l) {
       T.resize(T.size() +3);
 
       if((long_edges[0] == 0) && (long_edges[1] == 2)){
-        v0 = T[i].e[long_edges[1]].edge_mid_point;
+        v0 = E[T[i].e[long_edges[1]]].edge_mid_point;
         v1 = T[i].v[long_edges[0]];
-        v2 = T[i].e[long_edges[0]].edge_mid_point;
+        v2 = E[T[i].e[long_edges[0]]].edge_mid_point;
         v3 = T[i].v[(long_edges[0] +1)%3];
         v4 = T[i].v[(long_edges[0] +2)%3];
       }
       else{
-        v0 = T[i].e[long_edges[0]].edge_mid_point;;
+        v0 = E[T[i].e[long_edges[0]]].edge_mid_point;;
         v1 = T[i].v[(long_edges[0] +1)%3];
-        v2 = T[i].e[long_edges[1]].edge_mid_point;
+        v2 = E[T[i].e[long_edges[1]]].edge_mid_point;
         v3 = T[i].v[(long_edges[0] +2)%3];
         v4 = T[i].v[long_edges[0]];
       }
@@ -273,10 +307,10 @@ void Mesh::first_step (float l) {
       triangles_2b_erased.push_back(i);
       T.resize(T.size() +4);
 
-      v0 = T[i].e[long_edges[0]].edge_mid_point;
+      v0 = E[T[i].e[long_edges[0]]].edge_mid_point;
       v1 = T[i].v[(long_edges[0] +1)%3];
-      v2 = T[i].e[long_edges[1]].edge_mid_point;
-      v3 = T[i].e[long_edges[2]].edge_mid_point;
+      v2 = E[T[i].e[long_edges[1]]].edge_mid_point;
+      v3 = E[T[i].e[long_edges[2]]].edge_mid_point;
       v4 = T[i].v[long_edges[0]];
       v5 = T[i].v[(long_edges[0] +2)%3];
 
@@ -313,6 +347,9 @@ void Mesh::first_step (float l) {
 void Mesh::second_step (float l) {
 
   #if REMESH_VERBOSE
+  std::clock_t begin_time, end_time;
+  double elapsed_secs;
+
   std::cerr << "second_step Begin..." << std::endl;
   begin_time = clock();
   #endif
@@ -320,14 +357,14 @@ void Mesh::second_step (float l) {
   float l_floor = l *REMESH_FACTOR_L_PERCENTAGE *4.0f /5.0f;
 
   std::vector<int> triangles_2b_erased;
-
-  std::vector<ereaseable_edge> edges_2b_erased;
-  ereaseable_edge e;
-
+  std::vector<Edge> edges_2b_erased;
+  std::vector<Edge>::iterator It;
+  Edge *e;
   bool apply_edge_collapse, edge_2b_killed;
-  std::vector<unsigned int>::iterator ia, ib, ic, id;
+
   unsigned int *va;
   unsigned int *vb;
+  unsigned int active_edges;
 
   for (unsigned int i = 0; i < T.size(); i++){
 
@@ -338,89 +375,51 @@ void Mesh::second_step (float l) {
     apply_edge_collapse = false;
 
     if (dist0 < l_floor){
-      e.edge_vertexes[0] = T[i].v[0];
-      e.edge_vertexes[1] = T[i].v[1];
-
+      e = &E[T[i].e[0]];
       apply_edge_collapse = true;
     }
     else if (dist1 < l_floor){
-      e.edge_vertexes[0] = T[i].v[1];
-      e.edge_vertexes[1] = T[i].v[2];
-
+      e = &E[T[i].e[1]];
       apply_edge_collapse = true;
     }
     else if (dist2 < l_floor){
-      e.edge_vertexes[0] = T[i].v[0];
-      e.edge_vertexes[1] = T[i].v[2];
-
+      e = &E[T[i].e[2]];
       apply_edge_collapse = true;
     }
 
     if(apply_edge_collapse){
-      edge_2b_killed = true;
-
-      for (unsigned int k = 0; k < edges_2b_erased.size(); k++){
-        ia = std::find(V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.begin(),
-                       V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.end(),
-                       e.edge_vertexes[0]
-                       );
-        ib = std::find(V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.begin(),
-                       V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.end(),
-                       e.edge_vertexes[1]
-                       );
-        ic = std::find(V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.begin(),
-                       V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.end(),
-                       e.edge_vertexes[0]
-                       );
-        id = std::find(V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.begin(),
-                       V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.end(),
-                       e.edge_vertexes[1]
-                       );
-        va = std::find(std::begin(edges_2b_erased[k].edge_vertexes), std::end(edges_2b_erased[k].edge_vertexes), e.edge_vertexes[0]);
-        vb = std::find(std::begin(edges_2b_erased[k].edge_vertexes), std::end(edges_2b_erased[k].edge_vertexes), e.edge_vertexes[1]);
-
-        // if ((ia != V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.end()) ||
-        //     (ib != V[edges_2b_erased[k].edge_vertexes[0]].Neighbor.end()) ||
-        //     (ic != V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.end()) ||
-        //     (id != V[edges_2b_erased[k].edge_vertexes[1]].Neighbor.end())){
-        //   edge_2b_killed = false;
-        // }
-
-        if ((va != std::end(edges_2b_erased[k].edge_vertexes)) ||
-            (vb != std::end(edges_2b_erased[k].edge_vertexes))){
-          edge_2b_killed = false;
+      if(e->used){
+        if(V[e->edge_vertex[0]].used && V[e->edge_vertex[1]].used){
+          e->used = false;
+          V[e->edge_vertex[0]].used = false;
+          V[e->edge_vertex[1]].used = false;
         }
-      }
-
-      if(edge_2b_killed){
-
-
-        V.resize(V.size() +1);
-
-        V[V.size() -1] = Vertex((V[e.edge_vertexes[0]].p + V[e.edge_vertexes[1]].p) *0.5f,
-                                (V[e.edge_vertexes[0]].n +V[e.edge_vertexes[1]].n) *0.5f
-                                );
-
-        e.edge_mid_point = V.size() -1;
-
-        edges_2b_erased.push_back(e);
-
-      }
+      }    
     }
   }
 
   for (unsigned int j = 0; j < T.size(); j++){
-    for (unsigned int k = 0; k < edges_2b_erased.size(); k++){
-      va = std::find(std::begin(T[j].v), std::end(T[j].v), edges_2b_erased[k].edge_vertexes[0]);
-      vb = std::find(std::begin(T[j].v), std::end(T[j].v), edges_2b_erased[k].edge_vertexes[1]);
-      if ((va != std::end(T[j].v)) && (vb != std::end(T[j].v))){
-        triangles_2b_erased.push_back(j);
-      }
-      if (va != std::end(T[j].v)){
-        *va = edges_2b_erased[k].edge_mid_point;
-      }
-      if (vb != std::end(T[j].v)){
-        *vb = edges_2b_erased[k].edge_mid_point;
+    active_edges = 0;
+
+    if(E[T[j].e[0]].used)
+      active_edges += 1;
+    if(E[T[j].e[1]].used)
+      active_edges += 1;
+    if(E[T[j].e[2]].used)
+      active_edges += 1;
+
+    if (active_edges < 3){
+      triangles_2b_erased.push_back(j);
+    }
+    else{
+      for (unsigned int k = 0; k < 3; k++){
+        if (!V[T[j].v[k]].used){
+          for (unsigned int w = 0; w < V[T[j].v[k]].edges.size(); w++){
+            if (!E[V[T[j].v[k]].edges[w]].used){
+              T[j].v[k] = E[V[T[j].v[k]].edges[w]].edge_mid_point;
+            }
+          }
+        }
       }
     }
   }

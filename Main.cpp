@@ -115,9 +115,9 @@ void init (const char * modelFilename) {
 
   remeshed_mesh_first.first_step(l_average);
   remeshed_mesh_first.recomputeNormals();
+  remeshed_mesh_first.recomputeEdges();
 
   remeshed_mesh_second = remeshed_mesh_first;
-  remeshed_mesh_second.recomputeNeighbors();
   remeshed_mesh_second.second_step(l_average);
   remeshed_mesh_second.recomputeNormals();
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
