@@ -109,26 +109,33 @@ void init (const char * modelFilename) {
 	mesh.loadOFF (modelFilename);
 
   original_mesh = mesh;
-  remeshed_mesh_first = mesh;
+  remeshed_mesh_second = mesh;
 
-  l_average = remeshed_mesh_first.zero_step();
+  for (unsigned int k = 0; k < 5; k++) {
+    remeshed_mesh_first = remeshed_mesh_second;
+    l_average = remeshed_mesh_first.zero_step();
 
-  remeshed_mesh_first.first_step(l_average);
-  remeshed_mesh_first.recomputeNormals();
-  remeshed_mesh_first.recomputeEdges();
+    remeshed_mesh_first.first_step(l_average);
+    remeshed_mesh_first.recomputeEdges();
 
-  remeshed_mesh_second = remeshed_mesh_first;
-  remeshed_mesh_second.second_step(l_average);
-  remeshed_mesh_second.recomputeNormals();
+    remeshed_mesh_second = remeshed_mesh_first;
 
-    srand(time(NULL));
+    remeshed_mesh_second.second_step(l_average);
+    remeshed_mesh_second.recomputeEdges();
+  }
+
+    remeshed_mesh_second.recomputeNormals();
+    remeshed_mesh_second.recomputeNeighbors();
 
 	// Run a number of cycle
 	for (unsigned int k = 0; k < 20; k++) {
-		mesh.calculate_Voronoi_areas();
+		remeshed_mesh_second.calculate_Voronoi_areas();
 		// The 4th step in the algorithm, but using area-based tangential smoothing
-		mesh.do_tangential_smoothing();
+	  remeshed_mesh_second.do_tangential_smoothing();
 	}
+
+  remeshed_mesh_first.recomputeNormals();
+  remeshed_mesh_second.recomputeNormals();
 
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }

@@ -67,7 +67,6 @@ void Mesh::loadOFF (const std::string & filename) {
     V[T[i].v[1]].add_neighbor(T[i].v[2]);
     V[T[i].v[2]].add_neighbor(T[i].v[0]);
     V[T[i].v[2]].add_neighbor(T[i].v[1]);
-    //std::cerr << V[T[i].v[0]].Neighbor[0];
   }
 
   in.close ();
@@ -168,6 +167,15 @@ float Mesh::area_triangle(Vec3f p1, Vec3f p2, Vec3f p3) {
 // Relocate vertices on the surface by area-based tangential smoothing
 void Mesh::do_tangential_smoothing() {
   // calculate the gravity-weighted centroid of each vertex
+
+  #if REMESH_VERBOSE
+  std::clock_t begin_time, end_time;
+  double elapsed_secs;
+
+  std::cerr << "do_tangential_smoothing Begin..." << std::endl;
+  begin_time = clock();
+  #endif
+
   for (unsigned int i = 0; i < V.size(); i++) {
     float sum_area = 0.0f;
     Vec3f pos = Vec3f(0.0f);
@@ -196,8 +204,20 @@ void Mesh::do_tangential_smoothing() {
     Vec3f v2 = Vec3f(-n1 * n2, 1 - n2 * n2, -n2 * n3);
     Vec3f v3 = Vec3f(-n1 * n3, -n2 * n3, 1 - n3 * n3);
 
-    V[i].p += lambda * (d[0] * v1 + d[1] * v2 + d[2] * v3);
+    Vec3f teste = lambda * (d[0] * v1 + d[1] * v2 + d[2] * v3);
+
+    if(!isnan(teste[0]) && !isnan(teste[1] && !isnan(teste[2])))
+      V[i].p += teste;
+
   }
+
+
+  #if REMESH_VERBOSE
+  end_time = clock();
+  elapsed_secs = double(end_time - begin_time) /CLOCKS_PER_SEC;
+  std::cerr << "do_tangential_smoothing End... Elapsed time (seconds): "
+            << elapsed_secs << std::endl;
+  #endif
 }
 
 void Mesh::recomputeNeighbors () {
@@ -430,7 +450,7 @@ void Mesh::first_step (float l) {
  * Applies an edge collapse in the mesh for all edges smaller than (4/5)*average
  * edge length.
  *
- * @param l Average edge length 
+ * @param l Average edge length
  */
 void Mesh::second_step (float l) {
 
@@ -482,7 +502,7 @@ void Mesh::second_step (float l) {
           V[e->edge_vertex[0]].used = false;
           V[e->edge_vertex[1]].used = false;
         }
-      }    
+      }
     }
   }
 
