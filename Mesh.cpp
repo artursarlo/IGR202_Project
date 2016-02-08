@@ -263,11 +263,13 @@ void Mesh::recomputeEdges () {
                            (V[T[i].v[k]].n +V[T[i].v[(k+1)%3]].n) *0.5f
                            ));
         new_edges[k].edge_mid_point =  V.size() -1;
+        new_edges[k].t.push_back(i);
 
         E.push_back(new_edges[k]);
         T[i].e[k] = E.size() -1;
       }
       else{
+        E[It -E.begin()].t.push_back(i);
         T[i].e[k] = It -E.begin();
       }
     }
@@ -468,10 +470,7 @@ void Mesh::second_step (float l) {
   std::vector<Edge> edges_2b_erased;
   std::vector<Edge>::iterator It;
   Edge *e;
-  bool apply_edge_collapse, edge_2b_killed;
-
-  unsigned int *va;
-  unsigned int *vb;
+  bool apply_edge_collapse;
   unsigned int active_edges;
 
   for (unsigned int i = 0; i < T.size(); i++){
@@ -544,3 +543,145 @@ void Mesh::second_step (float l) {
             << elapsed_secs << std::endl;
   #endif
 }
+
+void Mesh::third_step () {
+
+  #if REMESH_VERBOSE
+  std::clock_t begin_time, end_time;
+  double elapsed_secs;
+
+  std::cerr << "third_step Begin..." << std::endl;
+  begin_time = clock();
+  #endif
+
+  bool apply_edge_flip;
+
+  unsigned int original_t_vec_size = T.size();
+
+  unsigned int ta_vec_pos, tb_vec_pos;
+  unsigned int ta_vflip, ta_vflip_left, ta_vflip_right, ta_flip_edge_pos;
+  unsigned int tb_vflip, tb_vflip_left, tb_vflip_right, tb_flip_edge_pos;
+  unsigned int flip_edge_vec_pos, new_edge_vec_pos;
+
+  Edge flip_edge, new_edge;
+  Triangle new_ta, new_tb;
+  unsigned int v0, v1, v2, v3;
+
+  std::vector<unsigned int>::iterator It;
+
+  for (unsigned int j = 0; j < original_t_vec_size; j++){
+
+    apply_edge_flip = false;
+
+    if(T[j].used){
+      if(V[T[j].v[0]].Neighbor.size() > 6){
+        apply_edge_flip = true;
+
+        ta_vflip = 0;
+        ta_vflip_right = 1;
+        ta_vflip_left = 2;
+
+        ta_flip_edge_pos = 1;
+        flip_edge_vec_pos = T[j].e[1];
+        flip_edge = E[flip_edge_vec_pos];
+      }
+      else if(V[T[j].v[1]].Neighbor.size() > 6){
+        apply_edge_flip = true;
+
+        ta_vflip = 1;
+        ta_vflip_right = 2;
+        ta_vflip_left = 0;
+
+        ta_flip_edge_pos = 2;
+        flip_edge_vec_pos = T[j].e[2];
+        flip_edge = E[flip_edge_vec_pos];
+      }
+      else if(V[T[j].v[2]].Neighbor.size() > 6){
+        apply_edge_flip = true;
+
+        ta_vflip = 2;
+        ta_vflip_right = 0;
+        ta_vflip_left = 1;
+
+        ta_flip_edge_pos = 0;
+        flip_edge_vec_pos = T[j].e[0];
+        flip_edge = E[flip_edge_vec_pos];
+      }
+    }
+
+    if (apply_edge_flip){
+
+      // Discover important indexes for the calculus
+      ta_vec_pos = j;
+
+      if(flip_edge.t[0] == j)
+        tb_vec_pos = flip_edge.t[1];
+      else
+        tb_vec_pos = flip_edge.t[0];
+
+      if(T[tb_vec_pos].used){
+      tb_flip_edge_pos = std::find(T[tb_vec_pos].e,
+                                   T[tb_vec_pos].e +3,
+                                   flip_edge_vec_pos) - T[tb_vec_pos].e;
+      if(std::find(T[tb_vec_pos].v, T[tb_vec_pos].v +3,
+                   T[ta_vec_pos].v[ta_vflip_right]) == (T[tb_vec_pos].v +3)){
+        std::cerr << "tb_vflip_left Error!!!"<< std::endl;
+      }
+      if(std::find(T[tb_vec_pos].v, T[tb_vec_pos].v +3,
+                   T[ta_vec_pos].v[ta_vflip_left]) == (T[tb_vec_pos].v +3)){
+        std::cerr << "tb_vflip_right Error!!!" << std::endl;
+      }
+
+      tb_vflip_left = std::find(T[tb_vec_pos].v,
+                                T[tb_vec_pos].v +3,
+                                T[ta_vec_pos].v[ta_vflip_right])-T[tb_vec_pos].v;
+      tb_vflip = (tb_vflip_left+1)%3;
+      tb_vflip_right = (tb_vflip+1)%3;
+
+      // std::cerr << "tb_vflip_left: " << tb_vflip_left  << std::endl;
+
+      v0 = T[ta_vec_pos].v[ta_vflip];
+      v1 = T[ta_vec_pos].v[ta_vflip_right];
+      v2 = T[tb_vec_pos].v[tb_vflip];
+      v3 = T[ta_vec_pos].v[ta_vflip_left];
+
+      T[ta_vec_pos].used = false;
+      T[tb_vec_pos].used = false;
+      
+      E.resize(E.size() +1);
+      new_edge_vec_pos = E.size() -1;
+      E[new_edge_vec_pos] = Edge (v0, v2);
+      E[new_edge_vec_pos].t.push_back(ta_vec_pos);
+      E[new_edge_vec_pos].t.push_back(tb_vec_pos);
+
+      T.resize(T.size() +2);
+      T[T.size() -2] = Triangle(v0, v1, v2,
+                                T[ta_vec_pos].e[(ta_flip_edge_pos +2)%3],
+                                T[tb_vec_pos].e[(tb_flip_edge_pos+1)%3],
+                                new_edge_vec_pos);
+      T[T.size() -1] = Triangle(v0, v2, v3, new_edge_vec_pos,
+                                T[tb_vec_pos].e[(tb_flip_edge_pos+2)%3],
+                                T[ta_vec_pos].e[(ta_flip_edge_pos +1)%3]);
+      }
+    }
+  }
+
+  unsigned int delete_count = 0;
+  for (unsigned int j = 0; j < T.size(); j++){
+    if (!T[j].used){
+      T.erase(T.begin() + j -delete_count);
+      delete_count +=1;
+    }
+  }
+
+  #if REMESH_VERBOSE
+  end_time = clock();
+  elapsed_secs = double(end_time - begin_time) /CLOCKS_PER_SEC;
+  std::cerr << "second_step End... Elapsed time (seconds): "
+            << elapsed_secs << std::endl;
+  #endif
+}
+
+
+
+  

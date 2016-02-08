@@ -33,6 +33,7 @@ class Edge {
   inline Edge (const Edge & e) {
     edge_vertex[0] = e.edge_vertex[0];
     edge_vertex[1] = e.edge_vertex[1];
+    t = e.t;
     edge_mid_point = e.edge_mid_point;
     used = e.used;
   }
@@ -45,6 +46,7 @@ class Edge {
   inline Edge & operator= (const Edge & e) {
     edge_vertex[0] = e.edge_vertex[0];
     edge_vertex[1] = e.edge_vertex[1];
+    t = e.t;
     edge_mid_point = e.edge_mid_point;
     used = e.used;
     return (*this);
@@ -56,7 +58,9 @@ class Edge {
   }
   unsigned int edge_vertex[2];
   unsigned int edge_mid_point;
+  std::vector<unsigned int> t;
   bool used;
+
 };
 
 /// A simple vertex class storing position and normal
@@ -103,7 +107,7 @@ class Triangle {
   inline Triangle () {
     v[0] = v[1] = v[2] = 0;
     e[0] = e[1] = e[2] = 0;
-    edges_calculated = false;
+    used = true;
   }
   inline Triangle (const Triangle & t) {
     v[0] = t.v[0];
@@ -112,18 +116,18 @@ class Triangle {
     e[0] = t.e[0];
     e[1] = t.e[1];
     e[2] = t.e[2];
-    edges_calculated = t.edges_calculated;
+    used = t.used;
   }
   inline Triangle (unsigned int v0, unsigned int v1, unsigned int v2,
                    unsigned int e0=0, unsigned int e1=0, unsigned int e2=0,
-                   bool c= false) {
+                   bool u= true) {
     v[0] = v0;
     v[1] = v1;
     v[2] = v2;
     e[0] = e0;
     e[1] = e1;
     e[2] = e2;
-    edges_calculated = c;
+    used = u;
   }
   inline virtual ~Triangle () {}
   inline Triangle & operator= (const Triangle & t) {
@@ -133,13 +137,13 @@ class Triangle {
     e[0] = t.e[0];
     e[1] = t.e[1];
     e[2] = t.e[2];
-    edges_calculated = t.edges_calculated;
+    used = t.used;
     return (*this);
   }
 
   unsigned int v[3];
   unsigned int e[3];
-  bool edges_calculated;
+  bool used;
 };
 
 /// A Mesh class, storing a list of vertices and a list of triangles indexed over it.
@@ -190,4 +194,6 @@ class Mesh {
   void first_step(float l);
 
   void second_step(float l);
+
+  void third_step ();
 };
