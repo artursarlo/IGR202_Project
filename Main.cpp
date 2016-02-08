@@ -31,7 +31,7 @@ static unsigned int FPS = 0;
 static bool fullScreen = false;
 
 static Camera camera;
-static Mesh mesh, original_mesh, remeshed_mesh_first, remeshed_mesh_second;
+static Mesh mesh, o_mesh, one_mesh, two_mesh, three_mesh, four_mesh;
 
 static float l_average;
 static int remesh_counter = 0;
@@ -108,49 +108,40 @@ void init (const char * modelFilename) {
 
 	mesh.loadOFF (modelFilename);
 
-  original_mesh = mesh;
-  remeshed_mesh_second = mesh;
+  o_mesh = mesh;
+  one_mesh = mesh;
+  two_mesh = mesh;
+  three_mesh = mesh;
+  four_mesh = mesh;
 
-  remeshed_mesh_first = remeshed_mesh_second;
-  l_average = remeshed_mesh_first.zero_step();
+  for (unsigned int k = 0; k < 5; k++) {
+    one_mesh = four_mesh;
+    l_average = one_mesh.zero_step();
 
-  remeshed_mesh_first.first_step(l_average);
-  remeshed_mesh_first.recomputeEdges();
+    one_mesh.first_step(l_average);
+    one_mesh.recomputeEdges();
 
-  remeshed_mesh_second = remeshed_mesh_first;
+    two_mesh = one_mesh;
+    two_mesh.second_step(l_average);
+    two_mesh.recomputeEdges();
 
-  remeshed_mesh_second.second_step(l_average);
-  remeshed_mesh_second.recomputeEdges();
+    three_mesh = two_mesh;
+    three_mesh.third_step();
+    three_mesh.recomputeEdges();
+    three_mesh.recomputeNeighbors();
+    three_mesh.recomputeNormals();
 
-  remeshed_mesh_first = remeshed_mesh_second;
-  remeshed_mesh_first.third_step();
 
+    four_mesh = three_mesh;
+    four_mesh.calculate_Voronoi_areas();
+		// The 4th step in the algorithm, but using area-based tangential smoothing
+	  four_mesh.do_tangential_smoothing();
+  }
 
-  // for (unsigned int k = 0; k < 5; k++) {
-  //   remeshed_mesh_first = remeshed_mesh_second;
-  //   l_average = remeshed_mesh_first.zero_step();
-
-  //   remeshed_mesh_first.first_step(l_average);
-  //   remeshed_mesh_first.recomputeEdges();
-
-  //   remeshed_mesh_second = remeshed_mesh_first;
-
-  //   remeshed_mesh_second.second_step(l_average);
-  //   remeshed_mesh_second.recomputeEdges();
-  // }
-
-  //   remeshed_mesh_second.recomputeNormals();
-  //   remeshed_mesh_second.recomputeNeighbors();
-
-	// // Run a number of cycle
-	// for (unsigned int k = 0; k < 20; k++) {
-	// 	remeshed_mesh_second.calculate_Voronoi_areas();
-	// 	// The 4th step in the algorithm, but using area-based tangential smoothing
-	//   remeshed_mesh_second.do_tangential_smoothing();
-	// }
-
-  // remeshed_mesh_first.recomputeNormals();
-  // remeshed_mesh_second.recomputeNormals();
+  one_mesh.recomputeNormals();
+  two_mesh.recomputeNormals();
+  three_mesh.recomputeNormals();
+  four_mesh.recomputeNormals();
 
   camera.resize (DEFAULT_SCREENWIDTH, DEFAULT_SCREENHEIGHT);
 }
@@ -190,28 +181,51 @@ void key (unsigned char keyPressed, int x, int y) {
     }
     break;
   case '+':
-    remesh_counter = (remesh_counter +1)%3;
-    if (remesh_counter == 0) {
-      mesh = original_mesh;
-    }
-    else if (remesh_counter == 1){
-      mesh = remeshed_mesh_first;
-    }
-    else{
-      mesh = remeshed_mesh_second;
+    remesh_counter += 1;
+    if (remesh_counter == 5)
+      remesh_counter = 4;
+    switch (remesh_counter){
+    case 0:
+      mesh = o_mesh;
+      break;
+    case 1:
+      mesh = one_mesh;
+      break;
+    case 2:
+      mesh = two_mesh;
+      break;
+    case 3:
+      mesh = three_mesh;
+      break;
+    case 4:
+      mesh = four_mesh;
+      break;
+    default:
+      break;
     }
     break;
   case '-':
-    if(remesh_counter >0)
-      remesh_counter = remesh_counter -1;
-    if (remesh_counter == 0) {
-      mesh = original_mesh;
-    }
-    else if (remesh_counter == 1){
-      mesh = remeshed_mesh_first;
-    }
-    else{
-      mesh = remeshed_mesh_second;
+    remesh_counter -= 1;
+    if (remesh_counter == -1)
+      remesh_counter = 0;
+    switch (remesh_counter){
+    case 0:
+      mesh = o_mesh;
+      break;
+    case 1:
+      mesh = one_mesh;
+      break;
+    case 2:
+      mesh = two_mesh;
+      break;
+    case 3:
+      mesh = three_mesh;
+      break;
+    case 4:
+      mesh = four_mesh;
+      break;
+    default:
+      break;
     }
     break;
   case 'q':
