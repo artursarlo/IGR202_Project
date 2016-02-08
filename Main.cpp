@@ -45,8 +45,8 @@ void printUsage () {
             << "------------------" << std::endl
             << " ?: Print help" << std::endl
             << " w: Toggle wireframe mode" << std::endl
-            << " +: Increment remeshed mode" << std::endl
-            << " -: Decrement remeshed mode" << std::endl
+            << " +: Increment last iteration step" << std::endl
+            << " -: Decrement last iteration step" << std::endl
             << " <drag>+<left button>: rotate model" << std::endl
             << " <drag>+<right button>: move model" << std::endl
             << " <drag>+<middle button>: zoom" << std::endl
@@ -114,9 +114,10 @@ void init (const char * modelFilename) {
   three_mesh = mesh;
   four_mesh = mesh;
 
-  for (unsigned int k = 0; k < 5; k++) {
+  l_average = one_mesh.zero_step();
+
+  for (unsigned int k = 0; k < 10; k++) {
     one_mesh = four_mesh;
-    l_average = one_mesh.zero_step();
 
     one_mesh.first_step(l_average);
     one_mesh.recomputeEdges();
@@ -124,6 +125,7 @@ void init (const char * modelFilename) {
     two_mesh = one_mesh;
     two_mesh.second_step(l_average);
     two_mesh.recomputeEdges();
+    two_mesh.recomputeNeighbors();
 
     three_mesh = two_mesh;
     three_mesh.third_step();

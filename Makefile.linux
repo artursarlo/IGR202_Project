@@ -1,7 +1,7 @@
 ifneq ($(REMESH_VERBOSE),)
-    CONFIG_OPT += -DREMESH_VERBOSE=1
-else
     CONFIG_OPT += -DREMESH_VERBOSE=0
+else
+    CONFIG_OPT += -DREMESH_VERBOSE=1
 endif
 
 CIBLE = main
@@ -11,7 +11,7 @@ LIBS =  -lglut -lGLU -lGL -lm
 CC = g++
 CPP = g++
 
-FLAGS = -std=c++11 -Wall -O2 $(CONFIG_OPT)
+FLAGS = -std=c++11 -Wall -O1 -g $(CONFIG_OPT)
 
 CFLAGS = $(FLAGS)
 CXXFLAGS = $(FLAGS)

@@ -27,17 +27,13 @@
 #include <ctime>
 #endif
 
+// Multiplicative factor to be multiplied by calculated average from mesh
 #define REMESH_FACTOR_L_PERCENTAGE 0.9f
 
 using namespace std;
 
-typedef struct{
-  unsigned int edge_vertexes[2];
-  unsigned int edge_mid_point;
-} ereaseable_edge;
-
 void Mesh::loadOFF (const std::string & filename) {
-  
+
 #if REMESH_VERBOSE
   std::clock_t begin_time, end_time;
   double elapsed_secs;
@@ -61,6 +57,7 @@ void Mesh::loadOFF (const std::string & filename) {
     for (unsigned int j = 0; j < 3; j++)
       in >> T[i].v[j];
 
+    // Fill the Neighbor vector of each vertex
     V[T[i].v[0]].add_neighbor(T[i].v[1]);
     V[T[i].v[0]].add_neighbor(T[i].v[2]);
     V[T[i].v[1]].add_neighbor(T[i].v[0]);
@@ -112,7 +109,9 @@ void Mesh::centerAndScaleToUnit () {
     V[i].p = (V[i].p - c) / maxD;
 }
 
-// compute the Voronoi area of each vertex
+/**
+ * Compute the Voronoi area of each vertex.
+ */
 void Mesh::calculate_Voronoi_areas() {
 
   for (unsigned int i = 0; i < V.size(); i++) {
@@ -144,7 +143,9 @@ void Mesh::calculate_Voronoi_areas() {
   }
 }
 
-// check if the triangle formed by p1, p2, p3 is obtuse
+/**
+ * Check if the triangle formed by p1, p2, p3 is obtuse.
+ */
 bool Mesh::is_obtuse_triangle(Vec3f p1, Vec3f p2, Vec3f p3) {
   if (dot(p1 - p2, p1 - p3) <= 0)
     return 1;
@@ -155,7 +156,9 @@ bool Mesh::is_obtuse_triangle(Vec3f p1, Vec3f p2, Vec3f p3) {
   return 0;
 }
 
-// calculate the area of triangle formed by p1, p2, p3
+/**
+ * Calculate the area of triangle formed by p1, p2, p3.
+ */
 float Mesh::area_triangle(Vec3f p1, Vec3f p2, Vec3f p3) {
   float a = dist(p1, p2);
   float b = dist(p2, p3);
@@ -164,7 +167,9 @@ float Mesh::area_triangle(Vec3f p1, Vec3f p2, Vec3f p3) {
   return sqrt(s * (s - a) * (s - b) * (s - c));
 }
 
-// Relocate vertices on the surface by area-based tangential smoothing
+/**
+ * Relocate vertices on the surface by area-based tangential smoothing.
+ */
 void Mesh::do_tangential_smoothing() {
   // calculate the gravity-weighted centroid of each vertex
 
@@ -190,7 +195,7 @@ void Mesh::do_tangential_smoothing() {
   }
 
   // damping factor
-  float lambda = (double) rand() / (RAND_MAX);
+  float lambda = 0.8f;
 
   // project each vertex back into the tangent plane
   for (unsigned int i = 0; i < V.size(); i++) {
@@ -220,6 +225,9 @@ void Mesh::do_tangential_smoothing() {
   #endif
 }
 
+/**
+ * Recomputes the Neighbor vector of each Vertex
+ */
 void Mesh::recomputeNeighbors () {
   for (unsigned int i = 0; i < V.size (); i++)
     V[i].Neighbor.resize(0);
@@ -233,6 +241,9 @@ void Mesh::recomputeNeighbors () {
   }
 }
 
+/**
+ * Recomputes the Edges vector for each vertex
+ */
 void Mesh::recomputeEdges () {
 
   #if REMESH_VERBOSE
@@ -344,7 +355,7 @@ float Mesh::zero_step (){
  * Applies an edge split in the mesh for all edges bigger than (4/3)*average
  * edge length.
  *
- * @param l Average edge length 
+ * @param l Average edge length
  */
 void Mesh::first_step (float l) {
 
@@ -376,8 +387,11 @@ void Mesh::first_step (float l) {
       long_edges.push_back(2);
     }
 
-    int v0, v1, v2, v3, v4, v5;
+    // Variables to store the vertex positions for each new triangle
+    unsigned int v0, v1, v2, v3, v4, v5;
 
+    // For each case add a new set of triangles to the mesh. Adds 2, 3 or 4 new
+    // triangles depending on the number of long edges (4/3 * l) 
     switch (long_edges.size()){
     case 1:
       triangles_2b_erased.push_back(i);
@@ -436,6 +450,7 @@ void Mesh::first_step (float l) {
     long_edges.resize(0);
   }
 
+  // Delete routine for deleted triangles
   for (unsigned int i = 0; i < triangles_2b_erased.size(); i++){
     T.erase(T.begin() +triangles_2b_erased[i] -i);
   }
@@ -481,6 +496,7 @@ void Mesh::second_step (float l) {
 
     apply_edge_collapse = false;
 
+    // Check and assign a candidate for the edge collapse
     if (dist0 < l_floor){
       e = &E[T[i].e[0]];
       apply_edge_collapse = true;
@@ -494,6 +510,7 @@ void Mesh::second_step (float l) {
       apply_edge_collapse = true;
     }
 
+    // Only apply the edge collapse there is no neighbor edge being collapsed
     if(apply_edge_collapse){
       if(e->used){
         if(V[e->edge_vertex[0]].used && V[e->edge_vertex[1]].used){
@@ -505,6 +522,8 @@ void Mesh::second_step (float l) {
     }
   }
 
+  // Loop to actually assign new values at each 1st ring neighbor of the
+  // vertexes of the collapsed edge
   for (unsigned int j = 0; j < T.size(); j++){
     active_edges = 0;
 
@@ -544,6 +563,10 @@ void Mesh::second_step (float l) {
   #endif
 }
 
+/**
+ * Applies an ege flip inside pairs of triangles. The flipped edge must have vertexes with valence
+ * distant from 6.
+ */
 void Mesh::third_step () {
 
   #if REMESH_VERBOSE
@@ -574,6 +597,9 @@ void Mesh::third_step () {
 
     apply_edge_flip = true;
 
+    // Verify the conditions to apply the edge flip:
+    // - No deleted triangle touching the edge
+    // - Edge Vertexes inside tolerance interval
     if(E[i].t.size() == 2){
       ta_vec_pos = E[i].t[0];
       tb_vec_pos = E[i].t[1];
@@ -584,7 +610,7 @@ void Mesh::third_step () {
       else{
         vx_valence = V[E[i].edge_vertex[0]].Neighbor.size();
         vy_valence = V[E[i].edge_vertex[1]].Neighbor.size();
-        if ((vx_valence < 6) || (vy_valence < 6))
+        if (((vx_valence <= 8) && (vx_valence >= 5)) || ((vy_valence <= 8) && (vy_valence >= 5)))
           apply_edge_flip = false;
       }
     }
@@ -618,6 +644,7 @@ void Mesh::third_step () {
     }
   }
 
+  // Delete triangles routine
   unsigned int delete_count = 0;
   for (unsigned int j = 0; j < original_t_vec_size; j++){
     if (!T[j -delete_count].used){
